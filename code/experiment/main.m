@@ -82,9 +82,22 @@ try
     
     
     % Loop over trials
-    for trial = 1:numTrials
-    
+    for trial = 1%:numTrials
+        imageDir = fullfile(stimDirectory, 'stimuli', '1.png');
+        strawberry = imread(imageDir);
+        imageTexture = Screen('MakeTexture', ptb.window, strawberry);
+        % Get an initial screen flip for timing
+        vbl = Screen('Flip', ptb.window);
+        % Draw the image to the screen, unless otherwise specified PTB will draw
+        % the texture full size in the center of the screen. We first draw the
+        % image in its correct orientation.
+        Screen('DrawTexture', ptb.window, imageTexture, [], [], 0);
+        
+        % Flip to the screen
+        vbl  = Screen('Flip', ptb.window, vbl + (3 - 0.5) * ptb.ifi);
     end
+
+    sca
     
     %% End of experiment
     % save data
