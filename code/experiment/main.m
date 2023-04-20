@@ -8,26 +8,41 @@
 
 %% Variables
 % Constant variables
+
+% design related
 numRuns = 0;
 numTrials = 0;
 numBreaks = 0;
 
+% hardware related
 distToMonitor = 0;
 monitorWidth = 0;
 monitorHeight = 0;
 
 keys = [];
-
-stimDirectory = fullfile('..', '..', 'stimuli');
-stimuliNames = {};
-
-dataDir = fullfile('..', '..', 'rawdata');
-
 useET = false;
 
-% Dynamic variables
-task = '';              % there probably will be more than one condition
+% stimuli related
+stimDirectory = fullfile('..', '..', 'stimuli');
+trueColorDirectory = fullfile(stimDirectory, 'true_color');
+invertedColorDirectory = fullfile(stimDirectory, 'inverted');
+stimuliNames = {
+    'green_frog_1';...
+    'red_tomato'; ...
+    'yellow_banana';
+    };
+imageFileEnding = '.png';
 
+% data related
+dataDir = fullfile('..', '..', 'rawdata');
+
+% Dynamic variables
+% design related
+task = '';              % there probably will be more than one condition
+horizontalOffset = 0;
+verticalOffset = 0;
+
+% data related
 subjectData = table; % or maybe a cell array?
 
 try
@@ -135,19 +150,31 @@ try
     
     
     % Loop over trials
-    for trial = 1%:numTrials
-        imageDir = fullfile(stimDirectory, 'stimuli', '1.png');
-        strawberry = imread(imageDir);
-        imageTexture = Screen('MakeTexture', ptb.window, strawberry);
+    for stim = 1:length(stimuliNames)
+        trueColorStim = fullfile(trueColorDirectory, [stimuliNames{stim} imageFileEnding]);
+        invertedColorStim = fullfile(invertedColorDirectory, [stimuliNames{stim} imageFileEnding]);
+        img1 = imread(trueColorStim);
+        img2 = imread(invertedColorStim);
         % Get an initial screen flip for timing
         vbl = Screen('Flip', ptb.window);
         % Draw the image to the screen, unless otherwise specified PTB will draw
         % the texture full size in the center of the screen. We first draw the
         % image in its correct orientation.
-        Screen('DrawTexture', ptb.window, imageTexture, [], [], 0);
         
+        % Select   left-eye image buffer for drawing:
+        Screen('SelectStereoDrawBuffer', ptb.window, 0);
+        imageTexture1 = Screen('MakeTexture', ptb.window, img1);
+        Screen('DrawTexture', ptb.window, imageTexture1, [], [], 0);
+        % Select right-eye image buffer for drawing:
+        Screen('SelectStereoDrawBuffer', ptb.window, 1);
+        imageTexture2 = Screen('MakeTexture', ptb.window, img2);
+        Screen('DrawTexture', ptb.window, imageTexture2, [], [], 0);
+        % Tell PTB drawing is finished for this frame:
+        Screen('DrawingFinished', ptb.window);
+
         % Flip to the screen
         vbl  = Screen('Flip', ptb.window, vbl + (3 - 0.5) * ptb.ifi);
+        WaitSecs(5);
     end
 
     sca
