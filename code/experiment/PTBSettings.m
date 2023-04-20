@@ -3,7 +3,7 @@ function ptb = PTBSettings()
 Screen('Preference', 'VisualDebugLevel', 1);
 
 % Decide which set up to use
-SetUp = 0;
+SetUp = 'CIN-personal';
 
 % Here we call some default settings for setting up Psychtoolbox
 PsychDefaultSetup(2);
@@ -59,23 +59,31 @@ ptb.Keys.yes        = KbName ('y');     ptb.KeyList2(ptb.Keys.yes)   = double(1)
 ptb.Keys.no         = KbName ('n');     ptb.KeyList2(ptb.Keys.no)    = double(1);
 ptb.Keys.debug      = 1;
 
+% general screen settings
+ptb.FontColor = [1 1 1];
+ptb.BackgroundColor = ptb.grey;
+
+PsychImaging('PrepareConfiguration');                                   % standard first command
+% PsychImaging('AddTask', 'General', 'SideBySideCompressedStereo');       % not quite sure I need it
+% PsychImaging('AddTask', 'General', 'UseVirtualFramebuffer');            % nice to have - not necessary, but suggested
+% PsychImaging('AddTask', 'General', 'UseFineGrainedTiming', 'Auto');     % makes timing even more efficient, but if the hardware does not support it, PsychImaging('OpenWindow') fails
+% PsychImaging('AddTask', 'General', 'UseFastOffscreenWindows');          % accelerates switching between drawing into onscreen and offscreen windows
 switch SetUp
-    case 0
-        ptb.FontColor = [1 1 1];
-        ptb.BackgroundColor = ptb.grey;
-        [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [0 0 1600 1080]); % For troubleshooting
+    case 'CIN-personal'
+        [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [0 0 1600 1080], [],[],4); 
         ptb.widthMonitor = 153;
         ptb.heightMonitor = 123;
-        ptb.Keys.kbrd2  = max(GetKeyboardIndices);
-        ptb.Keys.kbrd1  = min(GetKeyboardIndices);
-        fprintf('\n=> Experimentators keyboard Nr.: %u  %s \n',ptb.Keys.kbrd1, productNames{1});
-        fprintf('\n=> Subjects keyboard Nr.: %u  %s \n',ptb.Keys.kbrd2, productNames{end});
-    case 1
-        ptb.FontColor = [0 1 1];
-        ptb.BackgroundColor = ptb.black;
-        PsychImaging('PrepareConfiguration');
-        PsychImaging('AddTask', 'General', 'UsePanelFitter', [1600 1080], 'Aspect'); 
-        [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor);
+        for devi = 1:length(keyboardIndices)
+            if strcmp(productNames(devi), 'Logitech USB Keyboard')
+                ptb.Keys.kbrd1  = keyboardIndices(devi);
+                ptb.Keys.kbrd2  = keyboardIndices(devi);
+                fprintf('\n=> Subjects keyboard Nr.: %u  %s \n',ptb.Keys.kbrd2, productNames{devi});
+                fprintf('\n=> Experimenter keyboard Nr.: %u  %s \n',ptb.Keys.kbrd2, productNames{devi});
+            end
+        end
+    case 'CIN-experimentroom'
+%         PsychImaging('AddTask', 'General', 'UsePanelFitter', [1600 1080], 'Aspect'); 
+        [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [], [],[],4);
         
         ptb.FontSize = Screen('TextSize', ptb.window, 30);
         ptb.widthMonitor = 400;
@@ -86,12 +94,9 @@ switch SetUp
     
         ptb.Keys.kbrd1 = -1;
         ptb.Keys.kbrd2 = -1;
-    case 2
-        ptb.FontColor = [0 1 1];
-        ptb.BackgroundColor = ptb.black;
-        PsychImaging('PrepareConfiguration');
-        PsychImaging('AddTask', 'General', 'UsePanelFitter', [1600 1080], 'Aspect');
-        [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor); 
+    case 'MPI'
+%         PsychImaging('AddTask', 'General', 'UsePanelFitter', [1600 1080], 'Aspect');
+        [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [], [],[],4);
         
         ptb.FontSize = Screen('TextSize', ptb.window, 40);
         ptb.widthMonitor = 399;
@@ -99,7 +104,7 @@ switch SetUp
         % Because of the MR compatible keyboard we flip the order of button
         % presses. Additionally the buttons for the binary answers are index
         % (button 4$) and middle finger (button 3#)
-        %                                       The KeyList must be filled with doubles
+        % The KeyList must be filled with doubles
         
         ptb.Keys.trg        = KbName ('w');     ptb.KeyList2(ptb.Keys.trg)   = double(1); % The scanner sends 'w' as USB keyboard input (from keyboard 2)
 
