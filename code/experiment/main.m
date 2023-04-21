@@ -116,8 +116,13 @@ try
     for stim = 1:length(stimuliNames)
         trueColorStim = fullfile(trueColorDirectory, [stimuliNames{stim} imageFileEnding]);
         invertedColorStim = fullfile(invertedColorDirectory, [stimuliNames{stim} imageFileEnding]);
-        img1 = imread(trueColorStim);
-        img2 = imread(invertedColorStim);
+
+        % imread does not read in the alpha channel by default. We need to
+        % get it from the third return value and add to the img
+        [img1, ~, alpha1] = imread(trueColorStim);
+        [img2, ~, alpha2] = imread(invertedColorStim);
+        img1(:,:,4) = alpha1;
+        img2(:,:,4) = alpha2;
         % Get an initial screen flip for timing
         vbl = Screen('Flip', ptb.window);
         % Draw the image to the screen, unless otherwise specified PTB will draw
@@ -127,11 +132,11 @@ try
         % Select   left-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, 0);
         imageTexture1 = Screen('MakeTexture', ptb.window, img1);
-        Screen('DrawTexture', ptb.window, imageTexture1, [], [], 0);
+        Screen('DrawTexture', ptb.window, imageTexture1);
         % Select right-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, 1);
         imageTexture2 = Screen('MakeTexture', ptb.window, img2);
-        Screen('DrawTexture', ptb.window, imageTexture2, [], [], 0);
+        Screen('DrawTexture', ptb.window, imageTexture2);
         % Tell PTB drawing is finished for this frame:
         Screen('DrawingFinished', ptb.window);
 
