@@ -38,8 +38,11 @@ imageFileEnding = '.png';
 dataDir = fullfile('..', '..', 'rawdata');
 
 % Dynamic variables
+ExpStart = 0;           % GetSecs later to set the onset of all the experiment
 % design related
 task = '';              % there probably will be more than one condition
+trueColorBufferId       = 0; % 0=left; 1=right - just for initialization 
+invertedColorBufferId   = 1; % 0=left; 1=right - just for initialization
 
 % data related
 % results table
@@ -145,29 +148,36 @@ try
 
     
     % Loop over trials
-    for stim = 1:length(stimuliNames)
-        trueColorStim = fullfile(trueColorDirectory, [stimuliNames{stim} imageFileEnding]);
-        invertedColorStim = fullfile(invertedColorDirectory, [stimuliNames{stim} imageFileEnding]);
-
+    for stim = 1:length(stimuli)
+        trueColorStimPath = fullfile(trueColorDirectory, [stimuli{stim} imageFileEnding]);
+        invertedColorStimPath = fullfile(invertedColorDirectory, [stimuli{stim} imageFileEnding]);
         % imread does not read in the alpha channel by default. We need to
         % get it from the third return value and add to the img
-        [img1, ~, alpha1] = imread(trueColorStim);
-        [img2, ~, alpha2] = imread(invertedColorStim);
-        img1(:,:,4) = alpha1;
-        img2(:,:,4) = alpha2;
-        % Get an initial screen flip for timing
-        vbl = Screen('Flip', ptb.window);
-        % Draw the image to the screen, unless otherwise specified PTB will draw
-        % the texture full size in the center of the screen. We first draw the
-        % image in its correct orientation.
+        [trueColorStimImg, ~, trueAlpha] = imread(trueColorStimPath);
+        [invertedColorStimImg, ~, invertedAlpha] = imread(invertedColorStimPath);
+        trueColorStimImg(:,:,4) = trueAlpha;
+        invertedColorStimImg(:,:,4) = invertedAlpha;
         
+        % Determine on which eye the true color and the inverted color
+        % stimulus is presented 
+        % TODO: predetermine based on read in condition
+        switch trueEye{stim}
+            case 'right'
+                trueColorBufferId = 1;
+                invertedColorBufferId = 0;
+            case 'left'
+                trueColorBufferId = 0;
+                invertedColorBufferId = 1;
+            otherwise
+                error('Variable of trueEye is neither left nor right')
+        end
         % Select   left-eye image buffer for drawing:
-        Screen('SelectStereoDrawBuffer', ptb.window, 0);
-        imageTexture1 = Screen('MakeTexture', ptb.window, img1);
+        Screen('SelectStereoDrawBuffer', ptb.window, trueColorBufferId);
+        imageTexture1 = Screen('MakeTexture', ptb.window, trueColorStimImg);
         Screen('DrawTexture', ptb.window, imageTexture1);
         % Select right-eye image buffer for drawing:
-        Screen('SelectStereoDrawBuffer', ptb.window, 1);
-        imageTexture2 = Screen('MakeTexture', ptb.window, img2);
+        Screen('SelectStereoDrawBuffer', ptb.window, invertedColorBufferId);
+        imageTexture2 = Screen('MakeTexture', ptb.window, invertedColorStimImg);
         Screen('DrawTexture', ptb.window, imageTexture2);
         % Tell PTB drawing is finished for this frame:
         Screen('DrawingFinished', ptb.window);
