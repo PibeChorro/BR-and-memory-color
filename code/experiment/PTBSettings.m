@@ -46,9 +46,6 @@ ptb.grey = ptb.white / 2;
 
 
 %............................. KEYS ......................................%
-% Get Keyboard indices
-[keyboardIndices, productNames, ~] = GetKeyboardIndices();
-
 ptb.KeyList1 = zeros (256, 1); % initiate an empty array that later, when keys are defined, is filled with the allowed keys
 ptb.KeyList2 = zeros (256, 1); % initiate an empty array that later, when keys are defined, is filled with the allowed keys
 ptb.usbTrg = 1; % If 1 --> wait for scanner triggers & check USB inputs.
@@ -73,6 +70,8 @@ switch SetUp
         [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [0 0 1600 1080], [],[],4); 
         ptb.widthMonitor = 153;
         ptb.heightMonitor = 123;
+        % Get Keyboard indices
+        [keyboardIndices, productNames, ~] = GetKeyboardIndices('Logitech USB Keyboard');
         for devi = 1:length(keyboardIndices)
             if strcmp(productNames(devi), 'Logitech USB Keyboard')
                 ptb.Keys.kbrd1  = keyboardIndices(devi);
@@ -92,6 +91,9 @@ switch SetUp
         ptb.Keys.yes        = KbName ('/');     ptb.KeyList2(ptb.Keys.yes)   = double(1);
         ptb.Keys.no         = KbName ('*');     ptb.KeyList2(ptb.Keys.no)    = double(1);
     
+        % Get Keyboard indices
+        [keyboardIndices, productNames, ~] = GetKeyboardIndices();
+
         ptb.Keys.kbrd1 = -1;
         ptb.Keys.kbrd2 = -1;
     case 'MPI'
