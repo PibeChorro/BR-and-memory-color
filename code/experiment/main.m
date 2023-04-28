@@ -208,6 +208,7 @@ try
     end
 
     sca
+    savedata(log,ptb);
     
     %% End of experiment
     % save data
