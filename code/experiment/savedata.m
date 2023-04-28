@@ -9,11 +9,6 @@ function savedata(log,ptb)
     while KbEventAvail(ptb.Keys.kbrd2)
         [evt, ~] = KbEventGet(ptb.Keys.kbrd2);
         
-%         if ptb.Keys.debug == 1
-%             fprintf('Event is:\n'); disp(evt);
-%             fprintf('\nNow %i events remaining.\n', n);
-%         end
-        
         if evt.Pressed == 1
             log.data.idDown   = [log.data.idDown; evt.Keycode];
             log.data.timeDown = [log.data.timeDown; evt.Time];

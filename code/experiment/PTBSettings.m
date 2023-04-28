@@ -51,9 +51,11 @@ ptb.KeyList2 = zeros (256, 1); % initiate an empty array that later, when keys a
 ptb.usbTrg = 1; % If 1 --> wait for scanner triggers & check USB inputs.
 
 % general keys independent of the setup
-ptb.Keys.escape     = KbName ('ESCAPE');ptb.KeyList1(ptb.Keys.escape)= double(1);
-ptb.Keys.yes        = KbName ('y');     ptb.KeyList2(ptb.Keys.yes)   = double(1);
-ptb.Keys.no         = KbName ('n');     ptb.KeyList2(ptb.Keys.no)    = double(1);
+ptb.Keys.escape = KbName('ESCAPE');     ptb.KeyList1(ptb.Keys.escape)= double(1);
+ptb.Keys.yes    = KbName('y');          ptb.KeyList2(ptb.Keys.yes)   = double(1);
+ptb.Keys.no     = KbName('n');          ptb.KeyList2(ptb.Keys.no)    = double(1);
+ptb.Keys.left   = KbName('LeftArrow');  ptb.KeyList2(ptb.Keys.left)  = double(1);
+ptb.Keys.right  = KbName('RightArrow'); ptb.KeyList2(ptb.Keys.right) = double(1);
 ptb.Keys.debug      = 1;
 
 % general screen settings
