@@ -26,11 +26,6 @@ useET = false;
 stimDirectory = fullfile('..', '..', 'stimuli');
 trueColorDirectory = fullfile(stimDirectory, 'true_color');
 invertedColorDirectory = fullfile(stimDirectory, 'inverted');
-stimuliNames = {
-    'green_frog_1';...
-    'red_tomato'; ...
-    'yellow_banana';
-    };
 imageFileEnding = '.png';
 
 % data related
@@ -41,7 +36,38 @@ dataDir = fullfile('..', '..', 'rawdata');
 task = '';              % there probably will be more than one condition
 
 % data related
+% results table
+% TODO: add primer - grayscaled image of stimulus?
+% stimulus  | true-eye  | stim-onset    | stim-offset   | init-perc | duration-init | duration-true | duration-invert   | duration-mixed    | num-switches  |
+% string    | string    | float         | float         | string    | float         | float         | float             | float             | int           |
+% Example
+% frog_1    | right     | 12.345        | 17.890        | true_color| 2.22          | 3.1           | 1.9               | 0.5               | 3             |
+% ....
+%
 subjectData = table; % or maybe a cell array?
+% preallocate data
+stimuli         = {
+    'green_frog_1';...
+    'red_tomato'; ...
+    'yellow_banana';...
+    'orange_mandarine'
+    };   % read out from an existing condition table
+trueEye         = {'right','left','left','right'};   % read out from an existing condition table
+stimOnset       = zeros(4,1);
+stimOffset      = zeros(4,1);
+initPercept     = {'','','',''};
+durationInit    = zeros(4,1);
+durationTrue    = zeros(4,1);
+durationInvert  = zeros(4,1);
+durationMixed   = zeros(4,1);
+numSwitches     = zeros(4,1);
+
+% the exact times of which button was pressed at which point. Cannot be
+% preallocated because we do not know how many switches may occur
+log.data.idDown     = [];
+log.data.timeDown   = [];
+log.data.idUp       = [];
+log.data.timeUp     = [];
 
 try
     % Varialbes read out by the system and specific to the hardware
@@ -140,9 +166,17 @@ try
         % Tell PTB drawing is finished for this frame:
         Screen('DrawingFinished', ptb.window);
 
-        % Flip to the screen
-        vbl  = Screen('Flip', ptb.window, vbl + (3 - 0.5) * ptb.ifi);
-        WaitSecs(5);
+        % Present stimuli
+        vblOnset  = Screen('Flip', ptb.window);
+        
+        % get subject input during trial
+
+        % show intertrial interval
+        vblOffset = Screen('Flip', ptb.window, vblOnset+stimulusPresentationTime);
+        WaitSecs(ITI);
+        % save timing of stimuli
+        stimOnset(stim) = vblOnset-ExpStart;
+        stimOffset(stim) = vblOffset-ExpStart;
     end
 
     sca
