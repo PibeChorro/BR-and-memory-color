@@ -3,6 +3,9 @@
 % objects in either their "correct" - i.e., associated - color or in an
 % "incorrect" color - i.e., a color normally not associated with the
 % object.
+% Data of interest: onset dominance (first dominant percept), sustained
+% dominance (time each stimulus is perceived), number of switches, duration
+% of initial percept
 % Written by Vincent Plikat 13/04/2023
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -10,9 +13,12 @@
 % Constant variables
 
 % design related
-numRuns = 0;
-numTrials = 0;
-numBreaks = 0;
+numRuns     = 0;
+numTrials   = 0;
+numBreaks   = 0;
+
+stimulusPresentationTime    = 2;
+ITI                         = 1;
 
 % hardware related
 distToMonitor = 0;
