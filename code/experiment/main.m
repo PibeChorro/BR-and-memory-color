@@ -146,6 +146,18 @@ try
     WaitSecs (0.5);
     KbWait();
 
+    %% Stop and remove events in queue
+    KbQueueStop(ptb.Keys.kbrd2);
+    KbEventFlush(ptb.Keys.kbrd2);
+    KbQueueStop(ptb.Keys.kbrd1);
+    KbEventFlush(ptb.Keys.kbrd1);
+
+    % restart KbQueues
+    KbQueueStart(ptb.Keys.kbrd2); % Subjects
+    KbQueueStart(ptb.Keys.kbrd1); % Experimentors
+
+    %% Presentation of stimuli
+    ExpStart = GetSecs();
     
     % Loop over trials
     for stim = 1:length(stimuli)
