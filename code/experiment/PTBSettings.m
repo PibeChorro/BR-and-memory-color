@@ -72,14 +72,13 @@ switch SetUp
         ptb.heightMonitor = 123;
         % Get Keyboard indices
         [keyboardIndices, productNames, ~] = GetKeyboardIndices('Logitech USB Keyboard');
-        for devi = 1:length(keyboardIndices)
-            if strcmp(productNames(devi), 'Logitech USB Keyboard')
-                ptb.Keys.kbrd1  = keyboardIndices(devi);
-                ptb.Keys.kbrd2  = keyboardIndices(devi);
-                fprintf('\n=> Subjects keyboard Nr.: %u  %s \n',ptb.Keys.kbrd2, productNames{devi});
-                fprintf('\n=> Experimenter keyboard Nr.: %u  %s \n',ptb.Keys.kbrd2, productNames{devi});
-            end
-        end
+        % for some unknown reason GetKeyboardIndices returns two indices
+        % for the Keyboard.
+        % It looks like the first index is the one working
+        ptb.Keys.kbrd1 = keyboardIndices(1);
+        ptb.Keys.kbrd2 = keyboardIndices(1);
+        fprintf('\n=> Subjects keyboard Nr.: %u  %s \n',ptb.Keys.kbrd2, productNames{1});
+        fprintf('\n=> Experimenter keyboard Nr.: %u  %s \n',ptb.Keys.kbrd2, productNames{1});
     case 'CIN-experimentroom'
 %         PsychImaging('AddTask', 'General', 'UsePanelFitter', [1600 1080], 'Aspect'); 
         [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [], [],[],4);
