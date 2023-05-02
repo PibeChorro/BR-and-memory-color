@@ -19,14 +19,13 @@ function savedata(log,ptb)
     end
     
     if strcmp(log.end,'Finished with errors')
-        save([log.fileName '_design_error'],'design');
         save([log.fileName '_ptb_error'],'ptb');
-        
-        if ~log.ETdummy; unixStr=['mv ' log.edfFile ' ' [log.edfFile] '_error.edf'];unix(unixStr);end
+        save([log.fileName '_log_error'],'log');
+        if ptb.useET; unixStr=['mv ' log.edfFile ' ' [log.edfFile] '_error.edf'];unix(unixStr);end
     elseif strcmp(log.end,'Escape')
         save([log.fileName '_ptb_cancelled'],'ptb');
         save([log.fileName '_log_cancelled'],'log'); fprintf('\n Saved cancelled data.... \n');
-        if ~log.ETdummy; unixStr=['mv ' log.edfFile ' ' [log.edfFile] '_cancelled.edf'];unix(unixStr);end
+        if ptb.useET; unixStr=['mv ' log.edfFile ' ' [log.edfFile] '_cancelled.edf'];unix(unixStr);end
     elseif strcmp(log.end,'Success')
         save([log.fileName '_ptb'],'ptb');
         save([log.fileName '_log'],'log'); fprintf('\n Saved success data.... \n');

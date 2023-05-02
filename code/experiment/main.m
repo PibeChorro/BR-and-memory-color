@@ -33,7 +33,7 @@ monitorWidth = 0;
 monitorHeight = 0;
 
 keys = [];
-useET = false;
+ptb.useET = false;
 
 % stimuli related
 stimDirectory = fullfile('..', '..', 'stimuli');
