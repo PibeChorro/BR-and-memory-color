@@ -255,16 +255,16 @@ try
         end
     end
 
-    sca
+    %% End of experiment
+    Screen('CloseAll')
     % Experiment ended without errors
     log.end = 'Success';
+    % save data
     savedata(log,ptb);
     
-    %% End of experiment
-    % save data
-    % catch error
+% catch error
 catch MY_ERROR
-    sca
+    Screen('CloseAll')
     % Experiment ended with an error
     log.end = 'Finished with errors';
     savedata(log,ptb);
