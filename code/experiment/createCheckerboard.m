@@ -8,7 +8,7 @@ xPixels = xSize/xFrequency/2;
 yPixels = ySize/yFrequency/2;
 
 % create a white and black rectangle
-white = ones(xPixels, yPixels);
+white = ones(xPixels, yPixels)*0.8;
 black = zeros(xPixels, yPixels);
 
 % create a small checkerboard with only four parts
