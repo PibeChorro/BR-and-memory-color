@@ -192,9 +192,9 @@ try
     TrialEnd = ExpStart;
     
     % Loop over trials
-    for stim = 1:length(stimuli)
-        trueColorStimPath = fullfile(trueColorDirectory, [stimuli{stim} imageFileEnding]);
-        invertedColorStimPath = fullfile(invertedColorDirectory, [stimuli{stim} imageFileEnding]);
+    for stim = 1:4 %length(stimuli)
+        trueColorStimPath = fullfile(trueColorDirectory, log.data.stimuli{stim});
+        invertedColorStimPath = fullfile(invertedColorDirectory, log.data.stimuli{stim});
         % imread does not read in the alpha channel by default. We need to
         % get it from the third return value and add to the img
         [trueColorStimImg, ~, trueAlpha] = imread(trueColorStimPath);
@@ -204,17 +204,9 @@ try
         
         % Determine on which eye the true color and the inverted color
         % stimulus is presented 
-        % TODO: predetermine based on read in condition
-        switch trueEye{stim}
-            case 'right'
-                trueColorBufferId = 1;
-                invertedColorBufferId = 0;
-            case 'left'
-                trueColorBufferId = 0;
-                invertedColorBufferId = 1;
-            otherwise
-                error('Variable of trueEye is neither left nor right')
-        end
+        trueColorBufferId = sum(log.data.trueEyeBinary(stim));
+        invertedColorBufferId = sum(~log.data.trueEyeBinary(stim));
+
         % Select   left-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, trueColorBufferId);
         Screen('DrawTexture', ptb.window, backGroundTexture);
