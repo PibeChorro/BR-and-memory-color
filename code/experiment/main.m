@@ -40,12 +40,16 @@ stimDirectory = fullfile('..', '..', 'stimuli');
 trueColorDirectory = fullfile(stimDirectory, 'true_color');
 invertedColorDirectory = fullfile(stimDirectory, 'inverted');
 imageFileEnding = '.png';
+checkerBoardXFrequency = 8;     % checkerboard background frequency along X
+checkerBoardYFrequency = 8;     % checkerboard background frequency along Y
 
 % data related
 dataDir = fullfile('..', '..', 'rawdata');
 
 % Dynamic variables
-ExpStart = 0;           % GetSecs later to set the onset of all the experiment
+% Stimuli related
+imageXPixels = 0;       % later read out from an example
+imageYPixels = 0;       % later read out from an example
 % design related
 task = '';              % there probably will be more than one condition
 trueColorBufferId       = 0; % 0=left; 1=right - just for initialization 
@@ -85,6 +89,17 @@ log.data.timeDown   = [];
 log.data.idUp       = [];
 log.data.timeUp     = [];
 
+% read in one example image to get the size and then create a checkerboard
+% as background
+exampleImgPath = fullfile(trueColorDirectory, log.data.stimuli{1});
+exampleImg = imread(exampleImgPath);
+imageSize = size(exampleImg);
+imageXPixels = imageSize(1);
+imageYPixels = imageSize(2);
+
+checkerBoardBackground = createCheckerboard(imageXPixels, imageYPixels,...
+    checkerBoardXFrequency, checkerBoardYFrequency);
+backGroundTexture = Screen('MakeTexture', ptb.window, checkerBoardBackground);
 try
     %% Subject input
     [sub, subjectDir, language] = inputSubID(dataDir);
@@ -184,10 +199,12 @@ try
         end
         % Select   left-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, trueColorBufferId);
+        Screen('DrawTexture', ptb.window, backGroundTexture);
         imageTexture1 = Screen('MakeTexture', ptb.window, trueColorStimImg);
         Screen('DrawTexture', ptb.window, imageTexture1);
         % Select right-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, invertedColorBufferId);
+        Screen('DrawTexture', ptb.window, backGroundTexture);
         imageTexture2 = Screen('MakeTexture', ptb.window, invertedColorStimImg);
         Screen('DrawTexture', ptb.window, imageTexture2);
         % Tell PTB drawing is finished for this frame:
