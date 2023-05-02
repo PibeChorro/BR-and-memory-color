@@ -187,34 +187,34 @@ try
     KbWait();
 
     %% Stop and remove events in queue
-    KbQueueStop(ptb.Keys.kbrd2);
-    KbEventFlush(ptb.Keys.kbrd2);
-    KbQueueStop(ptb.Keys.kbrd1);
-    KbEventFlush(ptb.Keys.kbrd1);
+    KbQueueStop(ptb.Keyboard2);
+    KbEventFlush(ptb.Keyboard2);
+    KbQueueStop(ptb.Keyboard1);
+    KbEventFlush(ptb.Keyboard1);
 
     % restart KbQueues
-    KbQueueStart(ptb.Keys.kbrd2); % Subjects
-    KbQueueStart(ptb.Keys.kbrd1); % Experimentors
+    KbQueueStart(ptb.Keyboard2); % Subjects
+    KbQueueStart(ptb.Keyboard1); % Experimentors
 
     %% Presentation of stimuli
     ExpStart = GetSecs();
     TrialEnd = ExpStart;
     
     % Loop over trials
-    for stim = 1:4 %length(stimuli)
-        trueColorStimPath = fullfile(trueColorDirectory, log.data.stimuli{stim});
-        invertedColorStimPath = fullfile(invertedColorDirectory, log.data.stimuli{stim});
+    for trial = 1:2 %length(numTrials)
+        trueColorStimPath = fullfile(trueColorDirectory, log.data.stimuli{trial});
+        invertedColorStimPath = fullfile(invertedColorDirectory, log.data.stimuli{trial});
         % imread does not read in the alpha channel by default. We need to
         % get it from the third return value and add to the img
-        [trueColorStimImg, ~, trueAlpha] = imread(trueColorStimPath);
-        [invertedColorStimImg, ~, invertedAlpha] = imread(invertedColorStimPath);
-        trueColorStimImg(:,:,4) = trueAlpha;
-        invertedColorStimImg(:,:,4) = invertedAlpha;
+        [trueColorStimImg, ~, trueAlpha]            = imread(trueColorStimPath);
+        [invertedColorStimImg, ~, invertedAlpha]    = imread(invertedColorStimPath);
+        trueColorStimImg(:,:,4)         = trueAlpha;
+        invertedColorStimImg(:,:,4)     = invertedAlpha;
         
         % Determine on which eye the true color and the inverted color
         % stimulus is presented 
-        trueColorBufferId = sum(log.data.trueEyeBinary(stim));
-        invertedColorBufferId = sum(~log.data.trueEyeBinary(stim));
+        trueColorBufferId       = sum(log.data.trueEyeBinary(trial));
+        invertedColorBufferId   = sum(~log.data.trueEyeBinary(trial));
 
         % Select   left-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, trueColorBufferId);
@@ -239,11 +239,11 @@ try
         TrialEnd    = vblOffset;
 
         % save timing of stimuli
-        log.data.stimOnset(stim)     = vblOnset-ExpStart;
-        log.data.stimOffset(stim)    = vblOffset-ExpStart;
+        log.data.stimOnset(trial)     = vblOnset-ExpStart;
+        log.data.stimOffset(trial)    = vblOffset-ExpStart;
         %... Check if Experimentors pressed escape ...%
         % DOES NOT WORK!!!
-        [pressed, firstPress] = KbQueueCheck(ptb.Keys.kbrd1);
+        [pressed, firstPress] = KbQueueCheck(ptb.Keyboard1);
         if pressed
             if firstPress(ptb.Keys.escape)
                 log.end = 'Escape'; % Finished by escape key

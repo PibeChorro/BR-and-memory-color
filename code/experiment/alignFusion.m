@@ -28,8 +28,8 @@ function [horizontalOffset,verticalOffset] = alignFusion(ptb)
         
         Screen('Flip', ptb.window);
 
-%         [KeyIsDown, ~, keyCode, ~] = KbCheck(ptb.Keys.kbrd1);
-        [KeyIsDown, ~, keyCode, ~] = KbCheck(ptb.Keys.kbrd2);
+%         [KeyIsDown, ~, keyCode, ~] = KbCheck(ptb.Keyboard1);
+        [KeyIsDown, ~, keyCode, ~] = KbCheck(ptb.Keyboard2);
 
         if KeyIsDown
             if find(keyCode)==KbName('LeftArrow')

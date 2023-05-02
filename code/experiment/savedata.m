@@ -2,12 +2,12 @@ function savedata(log,ptb)
     %.............................GET RESPONSES...........................%
     % Regardless of HOW the experiment ended.
     % Stop KbQueue data collection
-    KbQueueStop(ptb.Keys.kbrd2); 
-    KbQueueStop(ptb.Keys.kbrd1);     
+    KbQueueStop(ptb.Keyboard2); 
+    KbQueueStop(ptb.Keyboard1);     
     
     % Extract events
-    while KbEventAvail(ptb.Keys.kbrd2)
-        [evt, ~] = KbEventGet(ptb.Keys.kbrd2);
+    while KbEventAvail(ptb.Keyboard2)
+        [evt, ~] = KbEventGet(ptb.Keyboard2);
         
         if evt.Pressed == 1
             log.data.idDown   = [log.data.idDown; evt.Keycode];

@@ -75,10 +75,10 @@ switch SetUp
         % for some unknown reason GetKeyboardIndices returns two indices
         % for the Keyboard.
         % It looks like the first index is the one working
-        ptb.Keys.kbrd1 = keyboardIndices(1);
-        ptb.Keys.kbrd2 = keyboardIndices(1);
-        fprintf('\n=> Subjects keyboard Nr.: %u  %s \n',ptb.Keys.kbrd2, productNames{1});
-        fprintf('\n=> Experimenter keyboard Nr.: %u  %s \n',ptb.Keys.kbrd2, productNames{1});
+        ptb.Keyboard1 = keyboardIndices(1);
+        ptb.Keyboard2 = keyboardIndices(1);
+        fprintf('\n=> Subjects keyboard Nr.: %u  %s \n',ptb.Keyboard2, productNames{1});
+        fprintf('\n=> Experimenter keyboard Nr.: %u  %s \n',ptb.Keyboard2, productNames{1});
     case 'CIN-experimentroom'
         [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [], [],[],4);
         
@@ -92,8 +92,8 @@ switch SetUp
         % Get Keyboard indices
         [keyboardIndices, productNames, ~] = GetKeyboardIndices();
 
-        ptb.Keys.kbrd1 = -1;
-        ptb.Keys.kbrd2 = -1;
+        ptb.Keyboard1 = -1;
+        ptb.Keyboard2 = -1;
     case 'MPI'
         [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [], [],[],4);
         
@@ -109,11 +109,11 @@ switch SetUp
 
         for devi = 1:length(keyboardIndices)
             if strcmp(productNames(devi), 'P.I. Engineering Xkeys')
-                ptb.Keys.kbrd2  = keyboardIndices(devi);
-                fprintf('\n=> Subjects keyboard Nr.: %u  %s \n',ptb.Keys.kbrd2, productNames{devi});
+                ptb.Keyboard2  = keyboardIndices(devi);
+                fprintf('\n=> Subjects keyboard Nr.: %u  %s \n',ptb.Keyboard2, productNames{devi});
             elseif strcmp(productNames(devi), 'Dell Dell USB Entry Keyboard')
-                ptb.Keys.kbrd1  = keyboardIndices(devi);
-                fprintf('\n=> Experimentators keyboard Nr.: %u  %s \n',ptb.Keys.kbrd1, productNames{devi});
+                ptb.Keyboard1  = keyboardIndices(devi);
+                fprintf('\n=> Experimentators keyboard Nr.: %u  %s \n',ptb.Keyboard1, productNames{devi});
             end
         end
     otherwise
@@ -121,17 +121,17 @@ switch SetUp
 end
 
 
-if ptb.Keys.kbrd1 == ptb.Keys.kbrd2
+if ptb.Keyboard1 == ptb.Keyboard2
    warning('You are using only one keyboard!'); 
 end
 
 % create & start KbQueue for the first Keyboard.
-KbQueueCreate(ptb.Keys.kbrd1, ptb.KeyList1);
-KbQueueStart(ptb.Keys.kbrd1);
+KbQueueCreate(ptb.Keyboard1, ptb.KeyList1);
+KbQueueStart(ptb.Keyboard1);
 
 % create & start KbQueue for the second Keyboard.
-KbQueueCreate(ptb.Keys.kbrd2, ptb.KeyList2);
-KbQueueStart(ptb.Keys.kbrd2);
+KbQueueCreate(ptb.Keyboard2, ptb.KeyList2);
+KbQueueStart(ptb.Keyboard2);
 
 
 %.........................................................................%
