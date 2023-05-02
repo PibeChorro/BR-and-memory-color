@@ -68,22 +68,33 @@ invertedColorBufferId   = 1; % 0=left; 1=right - just for initialization
 % ....
 %
 subjectData = table; % or maybe a cell array?
+% get randomized stimulus conditions
+[log.data.trueEye, log.data.stimuli]  = createCounterbalancedPseudorandomizedConditions(trueColorDirectory);
+
+% get number of trials from the length of stimuli 
+numTrials = length(log.data.trueEye);
+% trueEye is a cell array containing either 'right' or 'left' -> convert
+% into 0 and 1 for easy and fast assignment
+log.data.trueEyeBinary = zeros(numTrials,1);
+for side = 1:length(log.data.trueEye)
+    if strcmp(log.data.trueEye{side}, 'left')
+        log.data.trueEyeBinary(side) = 0;
+    elseif strcmp(log.data.trueEye{side}, 'right')
+        log.data.trueEyeBinary(side) = 1;
+    else
+        error('Assignment for true color side is neither left nor right')
+    end
+end
+
 % preallocate data
-stimuli         = {
-    'green_frog_1';...
-    'red_tomato'; ...
-    'yellow_banana';...
-    'orange_mandarine'
-    };   % read out from an existing condition table
-trueEye         = {'right','left','left','right'};   % read out from an existing condition table
-stimOnset       = zeros(4,1);
-stimOffset      = zeros(4,1);
-initPercept     = {'','','',''};
-durationInit    = zeros(4,1);
-durationTrue    = zeros(4,1);
-durationInvert  = zeros(4,1);
-durationMixed   = zeros(4,1);
-numSwitches     = zeros(4,1);
+log.data.stimOnset           = zeros(numTrials,1);
+log.data.stimOffset          = zeros(numTrials,1);
+log.data.initPercept         = repmat({''},numTrials,1);
+log.data.durationInit        = zeros(numTrials,1);
+log.data.durationTrue        = zeros(numTrials,1);
+log.data.durationInvert      = zeros(numTrials,1);
+log.data.durationMixed       = zeros(numTrials,1);
+log.data.numSwitches         = zeros(numTrials,1);
 
 % the exact times of which button was pressed at which point. Cannot be
 % preallocated because we do not know how many switches may occur
@@ -103,6 +114,9 @@ imageYPixels = imageSize(2);
 checkerBoardBackground = createCheckerboard(imageXPixels, imageYPixels,...
     checkerBoardXFrequency, checkerBoardYFrequency);
 backGroundTexture = Screen('MakeTexture', ptb.window, checkerBoardBackground);
+
+log.fileName = 'test';      % TODO
+
 try
     %% Subject input
     [sub, subjectDir, language] = inputSubID(dataDir);
@@ -221,16 +235,22 @@ try
         vblOffset   = Screen('Flip', ptb.window, vblOnset+stimulusPresentationTime);
         TrialEnd    = vblOffset;
         % save timing of stimuli
-        stimOnset(stim) = vblOnset-ExpStart;
-        stimOffset(stim) = vblOffset-ExpStart;
+        log.data.stimOnset(stim)     = vblOnset-ExpStart;
+        log.data.stimOffset(stim)    = vblOffset-ExpStart;
     end
 
     sca
+    % Experiment ended without errors
+    log.end = 'Success';
     savedata(log,ptb);
     
     %% End of experiment
     % save data
     % catch error
 catch MY_ERROR
+    sca
+    % Experiment ended with an error
+    log.end = 'Finished with errors';
+    savedata(log,ptb);
     rethrow(MY_ERROR);
 end
