@@ -52,11 +52,9 @@ ptb.usbTrg = 1; % If 1 --> wait for scanner triggers & check USB inputs.
 
 % general keys independent of the setup
 ptb.Keys.escape = KbName('ESCAPE');     ptb.KeyList1(ptb.Keys.escape)= double(1);
-ptb.Keys.yes    = KbName('y');          ptb.KeyList2(ptb.Keys.yes)   = double(1);
-ptb.Keys.no     = KbName('n');          ptb.KeyList2(ptb.Keys.no)    = double(1);
 ptb.Keys.left   = KbName('LeftArrow');  ptb.KeyList2(ptb.Keys.left)  = double(1);
 ptb.Keys.right  = KbName('RightArrow'); ptb.KeyList2(ptb.Keys.right) = double(1);
-ptb.Keys.debug      = 1;
+ptb.Keys.debug  = 1;
 
 % general screen settings
 ptb.FontColor = [1 1 1];
@@ -82,7 +80,6 @@ switch SetUp
         fprintf('\n=> Subjects keyboard Nr.: %u  %s \n',ptb.Keys.kbrd2, productNames{1});
         fprintf('\n=> Experimenter keyboard Nr.: %u  %s \n',ptb.Keys.kbrd2, productNames{1});
     case 'CIN-experimentroom'
-%         PsychImaging('AddTask', 'General', 'UsePanelFitter', [1600 1080], 'Aspect'); 
         [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [], [],[],4);
         
         ptb.FontSize = Screen('TextSize', ptb.window, 30);
@@ -98,7 +95,6 @@ switch SetUp
         ptb.Keys.kbrd1 = -1;
         ptb.Keys.kbrd2 = -1;
     case 'MPI'
-%         PsychImaging('AddTask', 'General', 'UsePanelFitter', [1600 1080], 'Aspect');
         [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [], [],[],4);
         
         ptb.FontSize = Screen('TextSize', ptb.window, 40);
