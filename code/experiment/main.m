@@ -226,9 +226,22 @@ try
         % show intertrial interval
         vblOffset   = Screen('Flip', ptb.window, vblOnset+stimulusPresentationTime);
         TrialEnd    = vblOffset;
+
         % save timing of stimuli
         log.data.stimOnset(stim)     = vblOnset-ExpStart;
         log.data.stimOffset(stim)    = vblOffset-ExpStart;
+        %... Check if Experimentors pressed escape ...%
+        % DOES NOT WORK!!!
+        [pressed, firstPress] = KbQueueCheck(ptb.Keys.kbrd1);
+        if pressed
+            if firstPress(ptb.Keys.escape)
+                log.end = 'Escape'; % Finished by escape key
+                log.ExpNotes = input('Notes:','s');
+                savedata(log,ptb);
+                warning('Experiment was terminated by Escapekey');
+                return;
+            end
+        end
     end
 
     sca
