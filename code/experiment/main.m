@@ -24,8 +24,8 @@ numRuns     = 0;
 numTrials   = 0;
 numBreaks   = 0;
 
-stimulusPresentationTime    = 2;
-ITI                         = 1;
+stimulusPresentationTime    = 2 - ptb.ifi/2;
+ITI                         = 1 - ptb.ifi/2;
 
 % hardware related
 distToMonitor = 0;
@@ -50,6 +50,9 @@ dataDir = fullfile('..', '..', 'rawdata');
 % Stimuli related
 imageXPixels = 0;       % later read out from an example
 imageYPixels = 0;       % later read out from an example
+% design related
+ExpStart = 0;         % GetSecs later to set the onset of all the experiment
+TrialEnd = 0;         % For better timing
 % design related
 task = '';              % there probably will be more than one condition
 trueColorBufferId       = 0; % 0=left; 1=right - just for initialization 
@@ -172,6 +175,7 @@ try
 
     %% Presentation of stimuli
     ExpStart = GetSecs();
+    TrialEnd = ExpStart;
     
     % Loop over trials
     for stim = 1:length(stimuli)
@@ -211,13 +215,11 @@ try
         Screen('DrawingFinished', ptb.window);
 
         % Present stimuli
-        vblOnset  = Screen('Flip', ptb.window);
-        
-        % get subject input during trial
+        vblOnset  = Screen('Flip', ptb.window, TrialEnd + ITI);
 
         % show intertrial interval
-        vblOffset = Screen('Flip', ptb.window, vblOnset+stimulusPresentationTime);
-        WaitSecs(ITI);
+        vblOffset   = Screen('Flip', ptb.window, vblOnset+stimulusPresentationTime);
+        TrialEnd    = vblOffset;
         % save timing of stimuli
         stimOnset(stim) = vblOnset-ExpStart;
         stimOffset(stim) = vblOffset-ExpStart;
