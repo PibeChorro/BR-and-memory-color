@@ -115,6 +115,15 @@ checkerBoardBackground = createCheckerboard(imageXPixels, imageYPixels,...
     checkerBoardXFrequency, checkerBoardYFrequency);
 backGroundTexture = Screen('MakeTexture', ptb.window, checkerBoardBackground);
 
+% resize stimuli
+% define a rectangle where the stimulus is drawn
+ptb.destinationRect = [ptb.screenXpixels/2-128 ptb.screenYpixels/2-128 ...
+    ptb.screenXpixels/2+128 ptb.screenYpixels/2+128];
+
+% big frame around stimuli
+bigFrame = [0+50, 0+50, ptb.screenXpixels-50, ptb.screenYpixels-50];
+penWidth = 10;
+
 log.fileName = 'test';      % TODO
 
 try
@@ -209,14 +218,16 @@ try
 
         % Select   left-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, trueColorBufferId);
+        Screen('FrameRect', ptb.window ,ptb.black ,bigFrame, penWidth);
         Screen('DrawTexture', ptb.window, backGroundTexture);
-        imageTexture1 = Screen('MakeTexture', ptb.window, trueColorStimImg);
-        Screen('DrawTexture', ptb.window, imageTexture1);
+        trueColorTexture = Screen('MakeTexture', ptb.window, trueColorStimImg);
+        Screen('DrawTexture', ptb.window, trueColorTexture, [], ptb.destinationRect);
         % Select right-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, invertedColorBufferId);
+        Screen('FrameRect', ptb.window ,ptb.black ,bigFrame, penWidth);
         Screen('DrawTexture', ptb.window, backGroundTexture);
-        imageTexture2 = Screen('MakeTexture', ptb.window, invertedColorStimImg);
-        Screen('DrawTexture', ptb.window, imageTexture2);
+        invertedColorTexture = Screen('MakeTexture', ptb.window, invertedColorStimImg);
+        Screen('DrawTexture', ptb.window, invertedColorTexture, [], ptb.destinationRect);
         % Tell PTB drawing is finished for this frame:
         Screen('DrawingFinished', ptb.window);
 
