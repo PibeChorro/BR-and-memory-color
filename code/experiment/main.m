@@ -10,6 +10,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Variables
+% Varialbes read out by the system and specific to the hardware
+try
+    ptb = PTBSettings();
+catch PTBError
+    fprinf('Something went wrong setting up PTB');
+    rethrow(PTBError)
+end
 % Constant variables
 
 % design related
@@ -79,14 +86,6 @@ log.data.idUp       = [];
 log.data.timeUp     = [];
 
 try
-    % Varialbes read out by the system and specific to the hardware
-    ptb = PTBSettings();
-    %% Read in stimuli
-    try
-    catch READING_ERROR
-        rethrow(READING_ERROR);
-    end
-    
     %% Subject input
     [sub, subjectDir, language] = inputSubID(dataDir);
     fprintf (sub);
