@@ -68,6 +68,8 @@ PsychImaging('PrepareConfiguration');                                   % standa
 switch SetUp
     case 'CIN-personal'
         [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [0 0 1600 1080], [],[],4); 
+        % Real world variable
+        ptb.DistToMonitor = 500;   %Distance to monitor in mm
         ptb.widthMonitor = 153;
         ptb.heightMonitor = 123;
         % Get Keyboard indices
@@ -83,6 +85,8 @@ switch SetUp
         [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [], [],[],4);
         
         ptb.FontSize = Screen('TextSize', ptb.window, 30);
+        % Real world variable
+        ptb.DistToMonitor = 500;   %Distance to monitor in mm
         ptb.widthMonitor = 400;
         ptb.heightMonitor = 350;
         %                                       The KeyList must be filled with doubles
@@ -98,6 +102,8 @@ switch SetUp
         [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [], [],[],4);
         
         ptb.FontSize = Screen('TextSize', ptb.window, 40);
+        % Real world variable
+        ptb.DistToMonitor = 500;   %Distance to monitor in mm
         ptb.widthMonitor = 399;
         ptb.heightMonitor = 224;
         % Because of the MR compatible keyboard we flip the order of button
@@ -138,10 +144,6 @@ KbQueueStart(ptb.Keyboard2);
 % Query the inter-frame-interval. This refers to the minimum possible time
 % between drawing to the screen
 ptb.ifi = Screen('GetFlipInterval', ptb.window);
-
-
-ptb.ResponseTime = 2 - ptb.ifi/2;    % After video presentation the sub has 2 seconds to press a botton to answer the question
-ptb.VideoLength  = 14 - ptb.ifi/2;   % Every video should have a length of 14 seconds / after 14 seconds the question should be presented
 
 % This function call will give use the same information as contained in
 % "windowRect"
@@ -199,8 +201,6 @@ Screen('BlendFunction', ptb.window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 % Here we set the size of the arms of our fixation cross
 % PRG somethings missing.
 
-% Real world variable
-ptb.DistToMonitor = 1050;   %Distance to monitor in mm
 % Determine the number of horizontal and vertical pixels of your screen window 
 [ptb.widthWindow, ptb.heightWindow]=Screen('WindowSize', ptb.window);
 
