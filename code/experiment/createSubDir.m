@@ -8,8 +8,6 @@ if (isfolder(subjectDirectory) && ~(strcmp(subjectNr, 'test')))
     if (strcmp(tripleCheck, 'y') || isempty(tripleCheck))
         [sub, subjectDirectory] = inputSubID(dataDir);
     end
-elseif strcmp(subjectNr, 'test')
-    fprintf('TESTRUN');
 else
     % create subject folder
     mkdir(subjectDirectory);
