@@ -1,11 +1,10 @@
-function [sub, subjectDir, language] = inputSubID(dataDir)
+function [sub, subjectDir, language] = inputSubID(dataDir, ptb)
     % Gets input of experimentator for subject ID
     % Get input and check if it is a number or 'test'
     numSubjects = 5;
     checkinput = true;
     safetynet = true;
     % TODO: make the language dependent on input in second while loop
-    language = 'german';
     
     try
         while safetynet
@@ -19,15 +18,19 @@ function [sub, subjectDir, language] = inputSubID(dataDir)
                     subjectNr = input('Enter subject Nr: ','s');
                 end
             end
-%             checkinput = true;
-%             while checkinput
-%                 log.isGerman = input ('Does the subject understand german? ','s');
-%                 if strcmp (log.isGerman, KbName(ptb.Keys.yes)) 
-%                     checkinput = false;
-%                 elseif strcmp (log.isGerman, KbName(ptb.Keys.no))
-%                     checkinput = false;
-%                 end
-%             end
+            checkinput = true;
+            while checkinput
+                log.isGerman = input ('Does the subject understand german [y/n]? ','s');
+                if strcmp (log.isGerman, KbName(ptb.Keys.yes))
+                    language = 'german';
+                    checkinput = false;
+                elseif strcmp (log.isGerman, KbName(ptb.Keys.no))
+                    language = 'english';
+                    checkinput = false;
+                else
+                    fprintf('Please answer with "y" or "n".\n')
+                end
+            end
             
             fprintf (['You specified subj ' subjectNr '\n'])
             answer = input ('Are you sure you gave the right parameters?','s');

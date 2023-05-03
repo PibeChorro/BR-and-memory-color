@@ -117,7 +117,7 @@ ptb.destinationRect = [ptb.screenXpixels/2-stimSizeInPixels/2 ...
 
 try
     %% Subject input
-    [log.sub, log.subjectDir, log.language] = inputSubID(dataDir);
+    [log.sub, log.subjectDir, log.language] = inputSubID(dataDir, ptb);
     fprintf (log.sub);
     fprintf ('\n');
     fprintf (log.subjectDir);
