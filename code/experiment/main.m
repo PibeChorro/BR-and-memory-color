@@ -17,48 +17,46 @@ catch PTBError
     fprinf('Something went wrong setting up PTB');
     rethrow(PTBError)
 end
-% Constant variables
 
-% design related
+%% design related
 numRuns     = 0;
 numTrials   = 0;
 numBreaks   = 0;
 
 stimulusPresentationTime    = 2 - ptb.ifi/2;
 ITI                         = 1 - ptb.ifi/2;
-
-% hardware related
-distToMonitor = 0;
-monitorWidth = 0;
-monitorHeight = 0;
-
-keys = [];
+stimSizeInDegrees           = 5;
+stimSizeInPixels            = round(ptb.PixPerDegWidth*stimSizeInDegrees);
+grayBackgroundInDegrees     = 6;
+checkerBoardInDegrees       = 8;
+checkerBoardXFrequency      = 8;     % checkerboard background frequency along X
+checkerBoardYFrequency      = 8;     % checkerboard background frequency along Y
+% Use eyetracker?
 ptb.useET = false;
 
-% stimuli related
+%% stimuli related
 stimDirectory = fullfile('..', '..', 'stimuli');
 trueColorDirectory = fullfile(stimDirectory, 'true_color');
 invertedColorDirectory = fullfile(stimDirectory, 'inverted');
-imageFileEnding = '.png';
-checkerBoardXFrequency = 8;     % checkerboard background frequency along X
-checkerBoardYFrequency = 8;     % checkerboard background frequency along Y
+%% Backgrounds
+% gray small background
+grayBackgroundInPixelsX     = round(ptb.PixPerDegWidth*grayBackgroundInDegrees);
+grayBackgroundInPixelsY     = round(ptb.PixPerDegHeight*grayBackgroundInDegrees);
+grayRect = [ptb.screenXpixels/2-grayBackgroundInPixelsX/2 ... 
+    ptb.screenYpixels/2-grayBackgroundInPixelsY/2 ...
+    ptb.screenXpixels/2+grayBackgroundInPixelsX/2 ...
+    ptb.screenYpixels/2+grayBackgroundInPixelsY/2];
+% checkerboard background
+checkerBoardInPixelsX       = int16(round(ptb.PixPerDegWidth*checkerBoardInDegrees));
+checkerBoardInPixelsY       = int16(round(ptb.PixPerDegHeight*checkerBoardInDegrees));
+checkerBoardBackground = createCheckerboard(checkerBoardInPixelsX, checkerBoardInPixelsY,...
+    checkerBoardXFrequency, checkerBoardYFrequency);
+backGroundTexture = Screen('MakeTexture', ptb.window, checkerBoardBackground);
+% big frame around stimuli
+bigFrame = [0+50, 0+50, ptb.screenXpixels-50, ptb.screenYpixels-50];
+penWidth = 10;
 
-% data related
-dataDir = fullfile('..', '..', 'rawdata');
-
-% Dynamic variables
-% Stimuli related
-imageXPixels = 0;       % later read out from an example
-imageYPixels = 0;       % later read out from an example
-% design related
-ExpStart = 0;         % GetSecs later to set the onset of all the experiment
-TrialEnd = 0;         % For better timing
-% design related
-task = '';              % there probably will be more than one condition
-trueColorBufferId       = 0; % 0=left; 1=right - just for initialization 
-invertedColorBufferId   = 1; % 0=left; 1=right - just for initialization
-
-% data related
+%% data related
 % results table
 % TODO: add primer - grayscaled image of stimulus?
 % stimulus  | true-eye  | stim-onset    | stim-offset   | init-perc | duration-init | duration-true | duration-invert   | duration-mixed    | num-switches  |
@@ -67,7 +65,7 @@ invertedColorBufferId   = 1; % 0=left; 1=right - just for initialization
 % frog_1    | right     | 12.345        | 17.890        | true_color| 2.22          | 3.1           | 1.9               | 0.5               | 3             |
 % ....
 %
-subjectData = table; % or maybe a cell array?
+dataDir = fullfile('..', '..', 'rawdata');
 % get randomized stimulus conditions
 [log.data.trueEye, log.data.stimuli]  = createCounterbalancedPseudorandomizedConditions(trueColorDirectory);
 
@@ -103,44 +101,35 @@ log.data.timeDown   = [];
 log.data.idUp       = [];
 log.data.timeUp     = [];
 
-% read in one example image to get the size and then create a checkerboard
-% as background
-exampleImgPath = fullfile(trueColorDirectory, log.data.stimuli{1});
-exampleImg = imread(exampleImgPath);
-imageSize = size(exampleImg);
-imageXPixels = imageSize(1);
-imageYPixels = imageSize(2);
+%% better timing
+ExpStart = 0;         % GetSecs later to set the onset of all the experiment
+TrialEnd = 0;         % For better timing
+% design related
+trueColorBufferId       = 0; % 0=left; 1=right - just for initialization 
+invertedColorBufferId   = 1; % 0=left; 1=right - just for initialization
 
-checkerBoardBackground = createCheckerboard(imageXPixels, imageYPixels,...
-    checkerBoardXFrequency, checkerBoardYFrequency);
-backGroundTexture = Screen('MakeTexture', ptb.window, checkerBoardBackground);
-
-% resize stimuli
+%% resize stimuli
 % define a rectangle where the stimulus is drawn
-ptb.destinationRect = [ptb.screenXpixels/2-128 ptb.screenYpixels/2-128 ...
-    ptb.screenXpixels/2+128 ptb.screenYpixels/2+128];
-
-% big frame around stimuli
-bigFrame = [0+50, 0+50, ptb.screenXpixels-50, ptb.screenYpixels-50];
-penWidth = 10;
-
-log.fileName = 'test';      % TODO
+ptb.destinationRect = [ptb.screenXpixels/2-stimSizeInPixels/2 ... 
+    ptb.screenYpixels/2-stimSizeInPixels/2 ...
+    ptb.screenXpixels/2+stimSizeInPixels/2 ...
+    ptb.screenYpixels/2+stimSizeInPixels/2];
 
 try
     %% Subject input
-    [sub, subjectDir, language] = inputSubID(dataDir);
-    fprintf (sub);
+    [log.sub, log.subjectDir, log.language] = inputSubID(dataDir);
+    fprintf (log.sub);
     fprintf ('\n');
-    fprintf (subjectDir);
+    fprintf (log.subjectDir);
     fprintf ('\n');
     
     %% Get design settings
-    design = designSettings(language);
+    design = designSettings(log.language);
     
     %% Inclusion of eye tracker
-    if useET
-        ET = IncludeEyetracker(sub);
-        %% Calibration and Validation
+    if ptb.useET
+        ET = IncludeEyetracker(log.sub);
+        % Calibration and Validation
         EyelinkDoTrackerSetup(ET);
         EyelinkDoDriftCorrection(ET);
         
@@ -220,17 +209,20 @@ try
         Screen('SelectStereoDrawBuffer', ptb.window, trueColorBufferId);
         Screen('FrameRect', ptb.window ,ptb.black ,bigFrame, penWidth);
         Screen('DrawTexture', ptb.window, backGroundTexture);
+        Screen('FillRect', ptb.window, ptb.grey, grayRect);
         trueColorTexture = Screen('MakeTexture', ptb.window, trueColorStimImg);
         Screen('DrawTexture', ptb.window, trueColorTexture, [], ptb.destinationRect);
+
         % Select right-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, invertedColorBufferId);
         Screen('FrameRect', ptb.window ,ptb.black ,bigFrame, penWidth);
         Screen('DrawTexture', ptb.window, backGroundTexture);
+        Screen('FillRect', ptb.window, ptb.grey, grayRect);
         invertedColorTexture = Screen('MakeTexture', ptb.window, invertedColorStimImg);
         Screen('DrawTexture', ptb.window, invertedColorTexture, [], ptb.destinationRect);
+
         % Tell PTB drawing is finished for this frame:
         Screen('DrawingFinished', ptb.window);
-
         % Present stimuli
         vblOnset  = Screen('Flip', ptb.window, TrialEnd + ITI);
 
