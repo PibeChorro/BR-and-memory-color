@@ -14,7 +14,7 @@
 try
     ptb = PTBSettings();
 catch PTBError
-    fprinf('Something went wrong setting up PTB');
+    fprintf('Something went wrong setting up PTB!\n');
     rethrow(PTBError)
 end
 
@@ -114,7 +114,7 @@ ExpStart = 0;         % GetSecs later to set the onset of all the experiment
 TrialEnd = 0;         % For better timing
 % design related
 trueColorBufferId       = 0; % 0=left; 1=right - just for initialization 
-invertedColorBufferId   = 1; % 0=left; 1=right - just for initialization
+invertedColorBufferId   = 1; % 0=left; 1=right - just for ininitalization
 
 %% Subject input
 try
@@ -145,6 +145,7 @@ try
         EyeUsed = -1;
     end
     
+    ListenChar(2); % suppress input to matlab windows
     %% Actual experiment
     % fuse images to the eyes
     % Do this before anything else
@@ -175,6 +176,7 @@ try
     Screen ('Flip', ptb.window);
     WaitSecs (0.5);
     KbWait();
+    WaitSecs (0.5);
 
     %% Stop and remove events in queue
     KbQueueStop(ptb.Keyboard2);
@@ -254,6 +256,7 @@ try
 
     %% End of experiment
     Screen('CloseAll')
+    ListenChar(1); % enable input to matlab windows
     % Experiment ended without errors
     log.end = 'Success';
     % save data
@@ -262,6 +265,7 @@ try
 % catch error
 catch MY_ERROR
     Screen('CloseAll')
+    ListenChar(1); % enable input to matlab windows
     % Experiment ended with an error
     log.end = 'Finished with errors';
     savedata(log,ptb,design);

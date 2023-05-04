@@ -20,11 +20,11 @@ function [sub, subjectDir, language] = inputSubID(dataDir, ptb)
             end
             checkinput = true;
             while checkinput
-                log.isGerman = input ('Does the subject understand german [y/n]? ','s');
-                if strcmp (log.isGerman, KbName(ptb.Keys.yes))
+                isGerman = input ('Does the subject understand german [y/n]? ','s');
+                if strcmp (isGerman, KbName(ptb.Keys.yes))
                     language = 'german';
                     checkinput = false;
-                elseif strcmp (log.isGerman, KbName(ptb.Keys.no))
+                elseif strcmp (isGerman, KbName(ptb.Keys.no))
                     language = 'english';
                     checkinput = false;
                 else
