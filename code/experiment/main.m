@@ -191,9 +191,9 @@ try
     TrialEnd = ExpStart;
     
     % Loop over trials
-    for trial = 1:2 %length(numTrials)
-        trueColorStimPath = fullfile(trueColorDirectory, log.data.stimuli{trial});
-        invertedColorStimPath = fullfile(invertedColorDirectory, log.data.stimuli{trial});
+    for trial = 1:10 %length(numTrials)
+        trueColorStimPath       = fullfile(trueColorDirectory, log.data.stimuli{trial});
+        invertedColorStimPath   = fullfile(invertedColorDirectory, log.data.stimuli{trial});
         % imread does not read in the alpha channel by default. We need to
         % get it from the third return value and add to the img
         [trueColorStimImg, ~, trueAlpha]            = imread(trueColorStimPath);
@@ -208,27 +208,31 @@ try
 
         % Select   left-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, trueColorBufferId);
-        Screen('FrameRect', ptb.window ,ptb.black ,bigFrame, penWidth);
-        Screen('DrawTexture', ptb.window, backGroundTexture);
-        Screen('FillRect', ptb.window, ptb.grey, grayRect);
-        trueColorTexture = Screen('MakeTexture', ptb.window, trueColorStimImg);
-        Screen('DrawTexture', ptb.window, trueColorTexture, [], ptb.destinationRect);
+        % BACKGROUND
+        Screen('FrameRect', ptb.window ,ptb.black ,design.bigFrame, design.penWidth);   % the big frame
+        Screen('DrawTexture', ptb.window, backGroundTexture);                           % checkerboard background
+        Screen('FillRect', ptb.window, ptb.grey, ptb.grayRect);                          % gray background on checkerboard
+        % FORGROUND
+        trueColorTexture = Screen('MakeTexture', ptb.window, trueColorStimImg);         % create texture for stimulus
+        Screen('DrawTexture', ptb.window, trueColorTexture, [], ptb.destinationRect);   % draw stimulus
 
         % Select right-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, invertedColorBufferId);
-        Screen('FrameRect', ptb.window ,ptb.black ,bigFrame, penWidth);
-        Screen('DrawTexture', ptb.window, backGroundTexture);
-        Screen('FillRect', ptb.window, ptb.grey, grayRect);
-        invertedColorTexture = Screen('MakeTexture', ptb.window, invertedColorStimImg);
-        Screen('DrawTexture', ptb.window, invertedColorTexture, [], ptb.destinationRect);
+        % BACKGROUND
+        Screen('FrameRect', ptb.window ,ptb.black ,design.bigFrame, design.penWidth);   % the big frame
+        Screen('DrawTexture', ptb.window, backGroundTexture);                           % checkerboard background
+        Screen('FillRect', ptb.window, ptb.grey, ptb.grayRect);                         % gray background on checkerboard
+        % FORGROUND
+        invertedColorTexture = Screen('MakeTexture', ptb.window, invertedColorStimImg);     % create texture for stimulus
+        Screen('DrawTexture', ptb.window, invertedColorTexture, [], ptb.destinationRect);   % draw stimulus
 
         % Tell PTB drawing is finished for this frame:
         Screen('DrawingFinished', ptb.window);
         % Present stimuli
-        vblOnset  = Screen('Flip', ptb.window, TrialEnd + ITI);
+        vblOnset  = Screen('Flip', ptb.window, TrialEnd + design.ITI);
 
         % show intertrial interval
-        vblOffset   = Screen('Flip', ptb.window, vblOnset+stimulusPresentationTime);
+        vblOffset   = Screen('Flip', ptb.window, vblOnset+design.stimulusPresentationTime);
         TrialEnd    = vblOffset;
 
         % save timing of stimuli

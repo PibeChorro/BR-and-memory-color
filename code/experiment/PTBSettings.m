@@ -1,51 +1,21 @@
 function ptb = PTBSettings()
+% Decide which set up to use
+SetUp = 'CIN-experimentroom';
+
 % Turn initial start screen from white to black
 Screen('Preference', 'VisualDebugLevel', 1);
 
-% Decide which set up to use
-SetUp = 'CIN-personal';
-
 % Here we call some default settings for setting up Psychtoolbox
 PsychDefaultSetup(2);
-% ListenChar(2);
-
-% Keyboard pre-setup
-KbName('UnifyKeyNames');
 
 % Set a new random seed.
 ptb.seed = rng('shuffle');
 
-% Get the screen numbers. This gives us a number for each of the screens
-% attached to our computer.
-ptb.screens = Screen('Screens');
-
-% To draw we select the maximum of these numbers. So in a situation where we
-% have two screens attached to our monitor we will draw to the external
-% screen.
-ptb.screenNumber = max(ptb.screens);
-
-% Define black and white (white will be 1 and black 0). This is because
-% in general luminace values are defined between 0 and 1 with 255 steps in
-% between. All values in Psychtoolbox are defined between 0 and 1
-ptb.white = WhiteIndex(ptb.screenNumber);
-ptb.black = BlackIndex(ptb.screenNumber);
-
-% Do a simply calculation to calculate the luminance value for grey. This
-% will be half     the luminace values for white
-ptb.grey = ptb.white / 2;
-
-% Open an on screen window and color it grey/or RGB. This function returns a
-% number that identifies the window we have opened "window" and a vector
-% "windowRect".
-% "windowRect" is a vector of numbers: the first is the X coordinate
-% representing the far left of our screen, the second the Y coordinate
-% representing the top of our screen,
-% the third the X coordinate representing
-% the far right of our screen and finally the Y coordinate representing the
-% bottom of our screen.
-
-
 %............................. KEYS ......................................%
+% ListenChar(2);
+
+% Keyboard pre-setup
+KbName('UnifyKeyNames');
 ptb.KeyList1 = zeros (256, 1); % initiate an empty array that later, when keys are defined, is filled with the allowed keys
 ptb.KeyList2 = zeros (256, 1); % initiate an empty array that later, when keys are defined, is filled with the allowed keys
 ptb.usbTrg = 1; % If 1 --> wait for scanner triggers & check USB inputs.
@@ -57,16 +27,6 @@ ptb.Keys.no     = KbName('n');          ptb.KeyList1(ptb.Keys.no)    = double(1)
 ptb.Keys.left   = KbName('LeftArrow');  ptb.KeyList2(ptb.Keys.left)  = double(1);
 ptb.Keys.right  = KbName('RightArrow'); ptb.KeyList2(ptb.Keys.right) = double(1);
 ptb.Keys.debug  = 1;
-
-% general screen settings
-ptb.FontColor = [1 1 1];
-ptb.BackgroundColor = ptb.grey;
-
-PsychImaging('PrepareConfiguration');                                   % standard first command
-% PsychImaging('AddTask', 'General', 'SideBySideCompressedStereo');       % not quite sure I need it
-% PsychImaging('AddTask', 'General', 'UseVirtualFramebuffer');            % nice to have - not necessary, but suggested
-% PsychImaging('AddTask', 'General', 'UseFineGrainedTiming', 'Auto');     % makes timing even more efficient, but if the hardware does not support it, PsychImaging('OpenWindow') fails
-% PsychImaging('AddTask', 'General', 'UseFastOffscreenWindows');          % accelerates switching between drawing into onscreen and offscreen windows
 switch SetUp
     case 'CIN-personal'
         [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [0 0 1600 1080], [],[],4); 
@@ -140,13 +100,37 @@ KbQueueStart(ptb.Keyboard1);
 % create & start KbQueue for the second Keyboard.
 KbQueueCreate(ptb.Keyboard2, ptb.KeyList2);
 KbQueueStart(ptb.Keyboard2);
+%........................... END KEYS ....................................%
 
+%.......................... Window Configuration .........................%
+% Get the screen numbers. This gives us a number for each of the screens
+% attached to our computer.
+ptb.screens = Screen('Screens');
 
-%.........................................................................%
-% Query the inter-frame-interval. This refers to the minimum possible time
-% between drawing to the screen
-ptb.ifi = Screen('GetFlipInterval', ptb.window);
+% To draw we select the maximum of these numbers. So in a situation where we
+% have two screens attached to our monitor we will draw to the external
+% screen.
+ptb.screenNumber = max(ptb.screens);
 
+% Define black and white (white will be 1 and black 0). This is because
+% in general luminace values are defined between 0 and 1 with 255 steps in
+% between. All values in Psychtoolbox are defined between 0 and 1
+ptb.white = WhiteIndex(ptb.screenNumber);
+ptb.black = BlackIndex(ptb.screenNumber);
+
+% Do a simply calculation to calculate the luminance value for grey. This
+% will be half     the luminace values for white
+ptb.grey = ptb.white / 2;
+
+% general screen settings
+ptb.FontColor = [1 1 1];
+ptb.BackgroundColor = ptb.grey;
+
+PsychImaging('PrepareConfiguration');                                   % standard first command
+% PsychImaging('AddTask', 'General', 'SideBySideCompressedStereo');       % not quite sure I need it
+% PsychImaging('AddTask', 'General', 'UseVirtualFramebuffer');            % nice to have - not necessary, but suggested
+% PsychImaging('AddTask', 'General', 'UseFineGrainedTiming', 'Auto');     % makes timing even more efficient, but if the hardware does not support it, PsychImaging('OpenWindow') fails
+% PsychImaging('AddTask', 'General', 'UseFastOffscreenWindows');          % accelerates switching between drawing into onscreen and offscreen windows
 % This function call will give use the same information as contained in
 % "windowRect"
 ptb.rect = Screen('Rect', ptb.window);
@@ -159,6 +143,42 @@ ptb.rect = Screen('Rect', ptb.window);
 % xCenter = screenXpixels / 2
 % yCenter = screenYpixels / 2
 [ptb.xCenter, ptb.yCenter] = RectCenter(ptb.windowRect);
+
+% Here we get the pixel size. This is not the physical size of the pixels
+% but the color depth of the pixel in bits
+ptb.pixelColorDepthInBits = Screen('PixelSize', ptb.window);
+
+% Queries the display size in mm as reported by the operating system. Note
+% that there are some complexities here. See Screen DisplaySize? for
+% information. So always measure your screen size directly.
+[ptb.width, ptb.height] = Screen('DisplaySize', ptb.screenNumber);
+
+% Determine the width and hight of your monitor (Use caution as these values are not always correct!)
+% [widthMonitor, heightMonitor]=Screen('DisplaySize', window); incorrect
+
+ptb.pixWidth =  ptb.widthMonitor/ptb.screenXpixels; % width of single pixel in mm 
+ptb.pixHeight = ptb.heightMonitor/ptb.screenYpixels; % height of single pixel in mm
+
+ptb.DegPerPixWidth = 2*atand((0.5*ptb.pixWidth)/ptb.DistToMonitor);
+ptb.PixPerDegWidth = 1/ptb.DegPerPixWidth;
+ptb.DegPerPixHeight = 2*atand((0.5*ptb.pixHeight)/ptb.DistToMonitor);
+ptb.PixPerDegHeight = 1/ptb.DegPerPixHeight;
+
+%......................... END Window Configuration ......................%
+
+%.................. Screen color settings and information ................%
+% Get the maximum coded luminance level (this should be 1)
+ptb.maxLum = Screen('ColorRange', ptb.window);
+
+% Set up alpha-blending for smooth (anti-aliased) lines
+Screen('BlendFunction', ptb.window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
+
+%.................. END Screen color settings and information ............% 
+
+%............................ Timing optmization..........................%
+% Query the inter-frame-interval. This refers to the minimum possible time
+% between drawing to the screen
+ptb.ifi = Screen('GetFlipInterval', ptb.window);
 
 % Retreive the maximum priority number
 ptb.topPriorityLevel = MaxPriority(ptb.window);
@@ -185,37 +205,7 @@ ptb.hertz = FrameRate(ptb.window);
 % GetFlipInterval? for more information
 ptb.nominalHertz = Screen('NominalFrameRate', ptb.window);
 
-% Here we get the pixel size. This is not the physical size of the pixels
-% but the color depth of the pixel in bits
-ptb.pixelSize = Screen('PixelSize', ptb.window);
-
-% Queries the display size in mm as reported by the operating system. Note
-% that there are some complexities here. See Screen DisplaySize? for
-% information. So always measure your screen size directly.
-[ptb.width, ptb.height] = Screen('DisplaySize', ptb.screenNumber);
-
-% Get the maximum coded luminance level (this should be 1)
-ptb.maxLum = Screen('ColorRange', ptb.window);
-
-% Set up alpha-blending for smooth (anti-aliased) lines
-Screen('BlendFunction', ptb.window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');          
-
-% Here we set the size of the arms of our fixation cross
-% PRG somethings missing.
-
-% Determine the number of horizontal and vertical pixels of your screen window 
-[ptb.widthWindow, ptb.heightWindow]=Screen('WindowSize', ptb.window);
-
-% Determine the width and hight of your monitor (Use caution as these values are not always correct!)
-% [widthMonitor, heightMonitor]=Screen('DisplaySize', window); incorrect
-
-ptb.pixWidth =  ptb.widthMonitor/ptb.widthWindow; % width of single pixel in mm 
-ptb.pixHeight = ptb.heightMonitor/ptb.heightWindow; % height of single pixel in mm
-
-ptb.DegPerPixWidth = 2*atand((0.5*ptb.pixWidth)/ptb.DistToMonitor);
-ptb.PixPerDegWidth = 1/ptb.DegPerPixWidth;
-ptb.DegPerPixHeight = 2*atand((0.5*ptb.pixHeight)/ptb.DistToMonitor);
-ptb.PixPerDegHeight = 1/ptb.DegPerPixHeight;
+%......................... END Timing optmization ........................%         
 end
 
 
