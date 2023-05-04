@@ -1,15 +1,15 @@
-function [sub, subjectDirectory] = createSubDir(dataDir, subjectNr)
+function log = createSubDir(log)
 
-sub = strcat('sub-', sprintf('%02s', subjectNr));
-subjectDirectory = fullfile(dataDir, sub);
+log.sub = strcat('sub-', sprintf('%02s', log.subjectNr));
+log.subjectDirectory = fullfile(log.dataDir, log.sub);
 % check if subject already exists
-if (isfolder(subjectDirectory) && ~(strcmp(subjectNr, 'test')))
+if (isfolder(log.subjectDirectory) && ~(strcmp(log.subjectNr, 'test')))
     tripleCheck = input('Subject folder already exists. Do you want to change subject ID Y/N [Y]?\n', 's');
     if (strcmp(tripleCheck, 'y') || isempty(tripleCheck))
-        [sub, subjectDirectory] = inputSubID(dataDir);
+        log = inputSubID(log);
     end
 else
     % create subject folder
-    mkdir(subjectDirectory);
+    mkdir(log.subjectDirectory);
 end
 end
