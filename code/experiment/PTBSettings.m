@@ -24,16 +24,15 @@ ptb.usbTrg = 1; % If 1 --> wait for scanner triggers & check USB inputs.
 ptb.Keys.escape = KbName('ESCAPE');     ptb.KeyList1(ptb.Keys.escape)= double(1);
 ptb.Keys.yes    = KbName('y');          ptb.KeyList1(ptb.Keys.yes)   = double(1);
 ptb.Keys.no     = KbName('n');          ptb.KeyList1(ptb.Keys.no)    = double(1);
-ptb.Keys.left   = KbName('LeftArrow');  ptb.KeyList2(ptb.Keys.left)  = double(1);
-ptb.Keys.right  = KbName('RightArrow'); ptb.KeyList2(ptb.Keys.right) = double(1);
 ptb.Keys.debug  = 1;
 switch SetUp
     case 'CIN-personal'
-        [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [0 0 1600 1080], [],[],4); 
-        % Real world variable
-        ptb.DistToMonitor = 500;   %Distance to monitor in mm
-        ptb.widthMonitor = 153;
-        ptb.heightMonitor = 123;
+        % subject keys
+        ptb.Keys.left   = KbName('LeftArrow');  ptb.KeyList2(ptb.Keys.left)  = double(1);
+        ptb.Keys.right  = KbName('RightArrow'); ptb.KeyList2(ptb.Keys.right) = double(1);
+        ptb.Keys.up     = KbName('UpArrow');    ptb.KeyList2(ptb.Keys.left)  = double(1);
+        ptb.Keys.down   = KbName('DownArrow');  ptb.KeyList2(ptb.Keys.right) = double(1);
+        ptb.Keys.accept = KbName('Return');     ptb.KeyList2(ptb.Keys.accept)= double(1);
         % Get Keyboard indices
         [keyboardIndices, productNames, ~] = GetKeyboardIndices('Logitech USB Keyboard');
         % for some unknown reason GetKeyboardIndices returns two indices
@@ -44,50 +43,41 @@ switch SetUp
         fprintf('\n=> Subjects keyboard Nr.: %u  %s \n',ptb.Keyboard2, productNames{1});
         fprintf('\n=> Experimenter keyboard Nr.: %u  %s \n',ptb.Keyboard2, productNames{1});
     case 'CIN-experimentroom'
-        [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [], [],[],4);
-        
-        ptb.FontSize = Screen('TextSize', ptb.window, 30);
-        % Real world variable
-        ptb.DistToMonitor = 500;   %Distance to monitor in mm
-        ptb.widthMonitor = 400;
-        ptb.heightMonitor = 350;
-        %                                       The KeyList must be filled with doubles
-        ptb.Keys.yes        = KbName ('/');     ptb.KeyList2(ptb.Keys.yes)   = double(1);
-        ptb.Keys.no         = KbName ('*');     ptb.KeyList2(ptb.Keys.no)    = double(1);
-    
+        % subject keys
+        ptb.Keys.left   = KbName('4');  ptb.KeyList2(ptb.Keys.left)  = double(1);
+        ptb.Keys.right  = KbName('6');  ptb.KeyList2(ptb.Keys.right) = double(1);
+        ptb.Keys.up     = KbName('8');  ptb.KeyList2(ptb.Keys.left)  = double(1);
+        ptb.Keys.down   = KbName('2');  ptb.KeyList2(ptb.Keys.right) = double(1);
+        ptb.Keys.accept = KbName('5');  ptb.KeyList2(ptb.Keys.accept)= double(1);
         % Get Keyboard indices
-        [keyboardIndices, productNames, ~] = GetKeyboardIndices();
-
-        ptb.Keyboard1 = -1;
-        ptb.Keyboard2 = -1;
+        [keyboardIndicesExp, productNamesExp, ~] = GetKeyboardIndices('Apple Inc. Apple Keyboard');
+        [keyboardIndicesSub, productNamesSub, ~] = GetKeyboardIndices('HID 04d9:1203');
+        ptb.Keyboard1 = keyboardIndicesExp(1);
+        ptb.Keyboard2 = keyboardIndicesSub(1);
+        fprintf('\n=> Subjects keyboard Nr.: %u  %s \n',ptb.Keyboard2, productNamesExp{1});
+        fprintf('\n=> Experimenter keyboard Nr.: %u  %s \n',ptb.Keyboard2, productNamesSub{1});
     case 'MPI'
-        [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [], [],[],4);
-        
-        ptb.FontSize = Screen('TextSize', ptb.window, 40);
-        % Real world variable
-        ptb.DistToMonitor = 500;   %Distance to monitor in mm
-        ptb.widthMonitor = 399;
-        ptb.heightMonitor = 224;
         % Because of the MR compatible keyboard we flip the order of button
         % presses. Additionally the buttons for the binary answers are index
         % (button 4$) and middle finger (button 3#)
         % The KeyList must be filled with doubles
-        
-        ptb.Keys.trg        = KbName ('w');     ptb.KeyList2(ptb.Keys.trg)   = double(1); % The scanner sends 'w' as USB keyboard input (from keyboard 2)
+        ptb.Keys.trg    = KbName ('w');     ptb.KeyList2(ptb.Keys.trg)   = double(1); % The scanner sends 'w' as USB keyboard input (from keyboard 2)
+        ptb.Keys.left   = KbName('LeftArrow');  ptb.KeyList2(ptb.Keys.left)  = double(1);
+        ptb.Keys.right  = KbName('RightArrow'); ptb.KeyList2(ptb.Keys.right) = double(1);
+        ptb.Keys.up     = KbName('UpArrow');    ptb.KeyList2(ptb.Keys.left)  = double(1);
+        ptb.Keys.down   = KbName('DownArrow');  ptb.KeyList2(ptb.Keys.right) = double(1);
+        ptb.Keys.accept = KbName('Return');     ptb.KeyList2(ptb.Keys.accept)= double(1);
 
-        for devi = 1:length(keyboardIndices)
-            if strcmp(productNames(devi), 'P.I. Engineering Xkeys')
-                ptb.Keyboard2  = keyboardIndices(devi);
-                fprintf('\n=> Subjects keyboard Nr.: %u  %s \n',ptb.Keyboard2, productNames{devi});
-            elseif strcmp(productNames(devi), 'Dell Dell USB Entry Keyboard')
-                ptb.Keyboard1  = keyboardIndices(devi);
-                fprintf('\n=> Experimentators keyboard Nr.: %u  %s \n',ptb.Keyboard1, productNames{devi});
-            end
-        end
+        [keyboardIndicesSub, productNamesSub, ~] = GetKeyboardIndices('P.I. Engineering Xkeys');
+        ptb.Keyboard2  = keyboardIndicesSub(1);
+        fprintf('\n=> Subjects keyboard Nr.: %u  %s \n',ptb.Keyboard2, productNamesSub{1});
+        
+        [keyboardIndicesExp, productNamesExp, ~] = GetKeyboardIndices('Dell Dell USB Entry Keyboard');
+        ptb.Keyboard1  = keyboardIndicesExp(1);
+        fprintf('\n=> Experimentators keyboard Nr.: %u  %s \n',ptb.Keyboard1, productNamesExp{1});
     otherwise
         error('No proper Set up was selected');
 end
-
 
 if ptb.Keyboard1 == ptb.Keyboard2
    warning('You are using only one keyboard!'); 
@@ -131,9 +121,32 @@ PsychImaging('PrepareConfiguration');                                   % standa
 % PsychImaging('AddTask', 'General', 'UseVirtualFramebuffer');            % nice to have - not necessary, but suggested
 % PsychImaging('AddTask', 'General', 'UseFineGrainedTiming', 'Auto');     % makes timing even more efficient, but if the hardware does not support it, PsychImaging('OpenWindow') fails
 % PsychImaging('AddTask', 'General', 'UseFastOffscreenWindows');          % accelerates switching between drawing into onscreen and offscreen windows
-% This function call will give use the same information as contained in
-% "windowRect"
-ptb.rect = Screen('Rect', ptb.window);
+switch SetUp
+    case 'CIN-personal'
+        [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [0 0 1600 1080], [],[],4); 
+        % Real world variable
+        ptb.DistToMonitor   = 500;  % Distance to monitor in mm (measured by hand) - REMEASURE
+        ptb.widthMonitor    = 153;  % monitor width measured by hand - REMEASURE
+        ptb.heightMonitor   = 123;  % monitor height measured by hand - REMEASURE
+    case 'CIN-experimentroom'
+        [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [], [],[],4);
+        
+        ptb.FontSize = Screen('TextSize', ptb.window, 24);
+        % Real world variable
+        ptb.DistToMonitor   = 800;  % Distance to monitor in mm (measured by hand)
+        ptb.widthMonitor    = 600;  % monitor width measured by hand
+        ptb.heightMonitor   = 335;  % monitor height measured by hand
+    case 'MPI'
+        [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [], [],[],4);
+        
+        ptb.FontSize = Screen('TextSize', ptb.window, 40);
+        % Real world variable
+        ptb.DistToMonitor   = 500;  % Distance to monitor in mm (measured by hand) - REMEASURE
+        ptb.widthMonitor    = 399;  % monitor width measured by hand - REMEASURE
+        ptb.heightMonitor   = 224;  % monitor height measured by hand - REMEASURE
+    otherwise
+        error('No proper Set up was selected');
+end
 
 % Get the size of the on screen window in pixels, these are the last two
 % numbers in "windowRect" and "rect"

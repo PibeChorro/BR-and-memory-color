@@ -33,23 +33,23 @@ function [horizontalOffset,verticalOffset] = alignFusion(ptb, design)
         [KeyIsDown, ~, keyCode, ~] = KbCheck(ptb.Keyboard2);
 
         if KeyIsDown
-            if find(keyCode)==KbName('LeftArrow')
+            if find(keyCode)==ptb.Keys.left
                 horizontalOffset = horizontalOffset-0.01;
                 disp('=>pressed LEFT')
-            elseif find(keyCode)==KbName('RightArrow')
+            elseif find(keyCode)==ptb.Keys.right
                 horizontalOffset = horizontalOffset+0.01;
                 disp('=>pressed RIGHT')
-            elseif find(keyCode)==KbName('UpArrow')
+            elseif find(keyCode)==ptb.Keys.up
                 verticalOffset = verticalOffset+0.01;
                 disp('=>pressed UP')
-            elseif find(keyCode)==KbName('DownArrow')
+            elseif find(keyCode)==ptb.Keys.down
                 verticalOffset = verticalOffset-0.01;
                 disp('=>pressed Down')
-            elseif find(keyCode)==KbName('Space')
+            elseif find(keyCode)==ptb.Keys.accept
                 disp('=>pressed Space')
                 break
             else
-                disp(['Pressed' num2str(KbName('LeftArrow'))])
+                disp(['Pressed' num2str(KbName(find(keyCode)))])
             end
                 fprintf('x-offset: %100.2f, y-offset:%100.2f \n', horizontalOffset, verticalOffset);
         end
