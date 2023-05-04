@@ -1,4 +1,4 @@
-function savedata(log,ptb)
+function savedata(log,ptb,design)
     %.............................GET RESPONSES...........................%
     % Regardless of HOW the experiment ended.
     % Stop KbQueue data collection
@@ -21,14 +21,17 @@ function savedata(log,ptb)
     if strcmp(log.end,'Finished with errors')
         save(fullfile(log.subjectDir, [log.sub '_ptb_error']),'ptb');
         save(fullfile(log.subjectDir, [log.sub '_log_error']),'log');
-        if ptb.useET; unixStr=['mv ' log.edfFile ' ' [log.edfFile] '_error.edf'];unix(unixStr);end
+        save(fullfile(log.subjectDir, [log.sub '_design_error']),'design');
+        if design.useET; unixStr=['mv ' log.edfFile ' ' [log.edfFile] '_error.edf'];unix(unixStr);end
     elseif strcmp(log.end,'Escape')
         save(fullfile(log.subjectDir, [log.sub '_ptb_cancelled']),'ptb');
         save(fullfile(log.subjectDir, [log.sub '_log_cancelled']),'log'); fprintf('\n Saved cancelled data.... \n');
-        if ptb.useET; unixStr=['mv ' log.edfFile ' ' [log.edfFile] '_cancelled.edf'];unix(unixStr);end
+        save(fullfile(log.subjectDir, [log.sub '_design_cancelled']),'design');
+        if design.useET; unixStr=['mv ' log.edfFile ' ' [log.edfFile] '_cancelled.edf'];unix(unixStr);end
     elseif strcmp(log.end,'Success')
         save(fullfile(log.subjectDir, [log.sub '_ptb']),'ptb');
         save(fullfile(log.subjectDir, [log.sub '_log']),'log'); fprintf('\n Saved success data.... \n');
+        save(fullfile(log.subjectDir, [log.sub '_design']),'design');
     end 
         
 end

@@ -19,42 +19,50 @@ catch PTBError
 end
 
 %% design related
-numRuns     = 0;
-numTrials   = 0;
-numBreaks   = 0;
-
-stimulusPresentationTime    = 2 - ptb.ifi/2;
-ITI                         = 1 - ptb.ifi/2;
-stimSizeInDegrees           = 5;
-stimSizeInPixels            = round(ptb.PixPerDegWidth*stimSizeInDegrees);
-grayBackgroundInDegrees     = 6;
-checkerBoardInDegrees       = 8;
-checkerBoardXFrequency      = 8;     % checkerboard background frequency along X
-checkerBoardYFrequency      = 8;     % checkerboard background frequency along Y
+design.stimulusPresentationTime    = 2 - ptb.ifi/2;
+design.ITI                         = 1 - ptb.ifi/2;
+design.stimSizeInDegrees           = 5;
+design.stimSizeInPixels            = round(ptb.PixPerDegWidth*design.stimSizeInDegrees);
+design.grayBackgroundInDegrees     = 6;
+design.checkerBoardInDegrees       = 10;
+design.checkerBoardXFrequency      = 8;     % checkerboard background frequency along X
+design.checkerBoardXFrequency      = 8;     % checkerboard background frequency along Y
 % Use eyetracker?
-ptb.useET = false;
+design.useET = false;
 
 %% stimuli related
 stimDirectory = fullfile('..', '..', 'stimuli');
 trueColorDirectory = fullfile(stimDirectory, 'true_color');
 invertedColorDirectory = fullfile(stimDirectory, 'inverted');
+
+% resize stimuli
+% define a rectangle where the stimulus is drawn
+ptb.destinationRect = [...
+    ptb.screenXpixels/2-design.stimSizeInPixels/2 ... 
+    ptb.screenYpixels/2-design.stimSizeInPixels/2 ...
+    ptb.screenXpixels/2+design.stimSizeInPixels/2 ...
+    ptb.screenYpixels/2+design.stimSizeInPixels/2];
+
 %% Backgrounds
 % gray small background
-grayBackgroundInPixelsX     = round(ptb.PixPerDegWidth*grayBackgroundInDegrees);
-grayBackgroundInPixelsY     = round(ptb.PixPerDegHeight*grayBackgroundInDegrees);
-grayRect = [ptb.screenXpixels/2-grayBackgroundInPixelsX/2 ... 
-    ptb.screenYpixels/2-grayBackgroundInPixelsY/2 ...
-    ptb.screenXpixels/2+grayBackgroundInPixelsX/2 ...
-    ptb.screenYpixels/2+grayBackgroundInPixelsY/2];
+design.grayBackgroundInPixelsX     = round(ptb.PixPerDegWidth* 2 *design.grayBackgroundInDegrees); 
+design.grayBackgroundInPixelsY     = round(ptb.PixPerDegHeight*design.grayBackgroundInDegrees);
+ptb.grayRect = [...
+    ptb.screenXpixels/2-design.grayBackgroundInPixelsX/2 ... 
+    ptb.screenYpixels/2-design.grayBackgroundInPixelsY/2 ...
+    ptb.screenXpixels/2+design.grayBackgroundInPixelsX/2 ...
+    ptb.screenYpixels/2+design.grayBackgroundInPixelsY/2];
 % checkerboard background
-checkerBoardInPixelsX       = int16(round(ptb.PixPerDegWidth*checkerBoardInDegrees));
-checkerBoardInPixelsY       = int16(round(ptb.PixPerDegHeight*checkerBoardInDegrees));
-checkerBoardBackground = createCheckerboard(checkerBoardInPixelsX, checkerBoardInPixelsY,...
-    checkerBoardXFrequency, checkerBoardYFrequency);
+% IMPORTANT! because the screen is in Stereomode and therefore devided the
+% calculation for pixel width is wrong. Multiplying by 2 resovles that
+design.checkerBoardInPixelsX       = int16(round(ptb.PixPerDegWidth* 2 *design.checkerBoardInDegrees));
+design.checkerBoardInPixelsY       = int16(round(ptb.PixPerDegHeight*design.checkerBoardInDegrees));
+checkerBoardBackground = createCheckerboard(design.checkerBoardInPixelsX, design.checkerBoardInPixelsY,...
+    design.checkerBoardXFrequency, design.checkerBoardXFrequency);
 backGroundTexture = Screen('MakeTexture', ptb.window, checkerBoardBackground);
 % big frame around stimuli
-bigFrame = [0+50, 0+50, ptb.screenXpixels-50, ptb.screenYpixels-50];
-penWidth = 10;
+design.bigFrame = [0+50, 0+50, ptb.screenXpixels-50, ptb.screenYpixels-50];
+design.penWidth = 10;
 
 %% data related
 % results table
@@ -108,15 +116,8 @@ TrialEnd = 0;         % For better timing
 trueColorBufferId       = 0; % 0=left; 1=right - just for initialization 
 invertedColorBufferId   = 1; % 0=left; 1=right - just for initialization
 
-%% resize stimuli
-% define a rectangle where the stimulus is drawn
-ptb.destinationRect = [ptb.screenXpixels/2-stimSizeInPixels/2 ... 
-    ptb.screenYpixels/2-stimSizeInPixels/2 ...
-    ptb.screenXpixels/2+stimSizeInPixels/2 ...
-    ptb.screenYpixels/2+stimSizeInPixels/2];
-
+%% Subject input
 try
-    %% Subject input
     [log.sub, log.subjectDir, log.language] = inputSubID(dataDir, ptb);
     fprintf (log.sub);
     fprintf ('\n');
@@ -124,10 +125,10 @@ try
     fprintf ('\n');
     
     %% Get design settings
-    design = designSettings(log.language);
+    design = designSettings(log.language,design);
     
     %% Inclusion of eye tracker
-    if ptb.useET
+    if design.useET
         ET = IncludeEyetracker(log.sub);
         % Calibration and Validation
         EyelinkDoTrackerSetup(ET);
@@ -147,7 +148,7 @@ try
     %% Actual experiment
     % fuse images to the eyes
     % Do this before anything else
-    [xOffset, yOffset] = alignFusion(ptb);
+    [design.xOffset, design.yOffset] = alignFusion(ptb, design);
 
     % Welcome screen
     % Select   left-eye image buffer for drawing:
@@ -240,7 +241,7 @@ try
             if firstPress(ptb.Keys.escape)
                 log.end = 'Escape'; % Finished by escape key
                 log.ExpNotes = input('Notes:','s');
-                savedata(log,ptb);
+                savedata(log,ptb,design);
                 warning('Experiment was terminated by Escapekey');
                 return;
             end
@@ -252,13 +253,13 @@ try
     % Experiment ended without errors
     log.end = 'Success';
     % save data
-    savedata(log,ptb);
+    savedata(log,ptb,design);
     
 % catch error
 catch MY_ERROR
     Screen('CloseAll')
     % Experiment ended with an error
     log.end = 'Finished with errors';
-    savedata(log,ptb);
+    savedata(log,ptb,design);
     rethrow(MY_ERROR);
 end
