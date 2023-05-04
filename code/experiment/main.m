@@ -73,7 +73,7 @@ design.penWidth = 10;
 % frog_1    | right     | 12.345        | 17.890        | true_color| 2.22          | 3.1           | 1.9               | 0.5               | 3             |
 % ....
 %
-dataDir = fullfile('..', '..', 'rawdata');
+log.dataDir = fullfile('..', '..', 'rawdata');
 % get randomized stimulus conditions
 [log.data.trueEye, log.data.stimuli]  = createCounterbalancedPseudorandomizedConditions(trueColorDirectory);
 
@@ -118,10 +118,10 @@ invertedColorBufferId   = 1; % 0=left; 1=right - just for ininitalization
 
 %% Subject input
 try
-    [log.sub, log.subjectDir, log.language] = inputSubID(dataDir, ptb);
+    log = inputSubID(ptb, log);
     fprintf (log.sub);
     fprintf ('\n');
-    fprintf (log.subjectDir);
+    fprintf (log.subjectDirectory);
     fprintf ('\n');
     
     %% Get design settings
@@ -193,7 +193,7 @@ try
     TrialEnd = ExpStart;
     
     % Loop over trials
-    for trial = 1:10 %length(numTrials)
+    for trial = 1:4 %length(numTrials)
         trueColorStimPath       = fullfile(trueColorDirectory, log.data.stimuli{trial});
         invertedColorStimPath   = fullfile(invertedColorDirectory, log.data.stimuli{trial});
         % imread does not read in the alpha channel by default. We need to
@@ -247,7 +247,7 @@ try
             if firstPress(ptb.Keys.escape)
                 log.end = 'Escape'; % Finished by escape key
                 log.ExpNotes = input('Notes:','s');
-                savedata(log,ptb,design);
+                log = savedata(log,ptb,design);
                 warning('Experiment was terminated by Escapekey');
                 return;
             end
@@ -260,7 +260,7 @@ try
     % Experiment ended without errors
     log.end = 'Success';
     % save data
-    savedata(log,ptb,design);
+    log = savedata(log,ptb,design);
     
 % catch error
 catch MY_ERROR
@@ -268,6 +268,6 @@ catch MY_ERROR
     ListenChar(1); % enable input to matlab windows
     % Experiment ended with an error
     log.end = 'Finished with errors';
-    savedata(log,ptb,design);
+    log = savedata(log,ptb,design);
     rethrow(MY_ERROR);
 end
