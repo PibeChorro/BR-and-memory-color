@@ -1,4 +1,4 @@
-function [horizontalOffset,verticalOffset] = alignFusion(ptb)
+function [horizontalOffset,verticalOffset] = alignFusion(ptb, design)
 % alignFusion: Find the disparity that creates fusion in the subject
 %   Draw a frame with text on both sides of the screen
 %   The subject can move the frame in any direction until it is fused
@@ -6,6 +6,7 @@ function [horizontalOffset,verticalOffset] = alignFusion(ptb)
     horizontalOffset = 0;
     verticalOffset = 0;
     framesize = max([ptb.screenXpixels, ptb.screenYpixels])/3; 
+  
     while true
         SetStereoSideBySideParameters(ptb.window, [0+horizontalOffset, 0+verticalOffset], [1, 1], [1-horizontalOffset, 0-verticalOffset], [1, 1]);
 
@@ -13,15 +14,15 @@ function [horizontalOffset,verticalOffset] = alignFusion(ptb)
         Screen('SelectStereoDrawBuffer', ptb.window, 0);
         Screen('FrameRect', ptb.window, 0,  CenterRectOnPoint([0 0 framesize framesize], ptb.xCenter, ptb.yCenter), 10);
 
-        DrawFormattedText(ptb.window, 'Fusion test: use arrows to adjust or press "space" to continue',...
-        'center', 'center', 0, 20, [], [], [], [], CenterRectOnPoint([0 0 framesize framesize], ptb.xCenter, ptb.yCenter)); % is this needed?
+        DrawFormattedText(ptb.window, design.FusionText,'center', 'center', ...
+        0, 20, [], [], [], [], CenterRectOnPoint([0 0 framesize framesize], ptb.xCenter, ptb.yCenter)); % is this needed?
 
         % Select right-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, 1);
         Screen('FrameRect', ptb.window, 0,  CenterRectOnPoint([0 0 framesize framesize], ptb.xCenter, ptb.yCenter), 10);
     
-        DrawFormattedText(ptb.window, 'Fusion test: use arrows to adjust or press "space" to continue',...
-        'center', 'center', 0, 20, [], [], [], [], CenterRectOnPoint([0 0 framesize framesize], ptb.xCenter, ptb.yCenter)); % is this needed?
+        DrawFormattedText(ptb.window, design.FusionText,'center', 'center', ...
+        0, 20, [], [], [], [], CenterRectOnPoint([0 0 framesize framesize], ptb.xCenter, ptb.yCenter)); % is this needed?
 
         % Tell PTB drawing is finished for this frame:
         Screen('DrawingFinished', ptb.window);
