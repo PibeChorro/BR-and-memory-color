@@ -1,6 +1,6 @@
 function ptb = PTBSettings()
 % Decide which set up to use
-SetUp = 'CIN-experimentroom';
+SetUp = 'CIN-personal';
 
 % Turn initial start screen from white to black
 Screen('Preference', 'VisualDebugLevel', 1);
@@ -32,7 +32,7 @@ switch SetUp
         ptb.Keys.right  = KbName('RightArrow'); ptb.KeyList2(ptb.Keys.right) = double(1);
         ptb.Keys.up     = KbName('UpArrow');    ptb.KeyList2(ptb.Keys.left)  = double(1);
         ptb.Keys.down   = KbName('DownArrow');  ptb.KeyList2(ptb.Keys.right) = double(1);
-        ptb.Keys.accept = KbName('Return');     ptb.KeyList2(ptb.Keys.accept)= double(1);
+        ptb.Keys.accept = KbName('Space');     ptb.KeyList2(ptb.Keys.accept)= double(1);
         % Get Keyboard indices
         [keyboardIndices, productNames, ~] = GetKeyboardIndices('Logitech USB Keyboard');
         % for some unknown reason GetKeyboardIndices returns two indices
