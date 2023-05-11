@@ -15,4 +15,10 @@ stimuliNames = {stimuli(:).name};
 numTrials = length(sides)*length(stimuliNames);
 randomize = true;
 
-[side, stim] = BalanceTrials(numTrials,randomize,sides,stimuliNames);
+while true
+    [side, stim] = BalanceTrials(numTrials,randomize,sides,colorStim);
+    if all(~strcmp(stim(1:end-1), stim(2:end)))
+        % If no value appears in consecutive order, break out of the loop
+        break;
+    end
+end
