@@ -202,6 +202,7 @@ try
         [invertedColorStimImg, ~, invertedAlpha]    = imread(invertedColorStimPath);
         trueColorStimImg(:,:,4)         = trueAlpha;
         invertedColorStimImg(:,:,4)     = invertedAlpha;
+        rotationAngle = 10;
         
         % Determine on which eye the true color and the inverted color
         % stimulus is presented 
@@ -216,7 +217,8 @@ try
         Screen('FillRect', ptb.window, ptb.grey, ptb.grayRect);                          % gray background on checkerboard
         % FORGROUND
         trueColorTexture = Screen('MakeTexture', ptb.window, trueColorStimImg);         % create texture for stimulus
-        Screen('DrawTexture', ptb.window, trueColorTexture, [], ptb.destinationRect);   % draw stimulus
+        Screen('DrawTexture', ptb.window, trueColorTexture, [], ...
+            ptb.destinationRect, rotationAngle);   % draw stimulus
 
         % Select right-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, invertedColorBufferId);
@@ -226,7 +228,8 @@ try
         Screen('FillRect', ptb.window, ptb.grey, ptb.grayRect);                         % gray background on checkerboard
         % FORGROUND
         invertedColorTexture = Screen('MakeTexture', ptb.window, invertedColorStimImg);     % create texture for stimulus
-        Screen('DrawTexture', ptb.window, invertedColorTexture, [], ptb.destinationRect);   % draw stimulus
+        Screen('DrawTexture', ptb.window, invertedColorTexture, [], ...
+            ptb.destinationRect, -rotationAngle);   % draw stimulus
 
         % Tell PTB drawing is finished for this frame:
         Screen('DrawingFinished', ptb.window);
