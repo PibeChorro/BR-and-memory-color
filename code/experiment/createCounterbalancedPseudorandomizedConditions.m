@@ -1,4 +1,4 @@
-function [side,stim] = createCounterbalancedPseudorandomizedConditions(stimDir)
+function [side, rotation, stim] = createCounterbalancedPseudorandomizedConditions(stimDir)
 % Create a cells of pseudorandomized stimulus order for each subject
 % A true color should not be presented twice in consecutive order
 % Do I need catch trials without rivalry?
@@ -7,6 +7,9 @@ function [side,stim] = createCounterbalancedPseudorandomizedConditions(stimDir)
 %% Factors
 % the side where the true color is presented
 sides = {'left', 'right'};
+% direction in which the true color is rotated (inverted color is rotated
+% in the other direction
+rotation = {'clockwise', 'counter-clockwise'};
 % all the stimuli used
 stimuli = dir(fullfile(stimDir,'*.png'));
 stimuliNames = {stimuli(:).name};
@@ -15,4 +18,4 @@ stimuliNames = {stimuli(:).name};
 numTrials = length(sides)*length(stimuliNames);
 randomize = true;
 
-[side, stim] = BalanceTrials(numTrials,randomize,sides,stimuliNames);
+[side, rotation, stim] = BalanceTrials(numTrials,randomize,sides,rotation,stimuliNames);
