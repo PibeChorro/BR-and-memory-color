@@ -75,7 +75,7 @@ design.penWidth = 10;
 %
 log.dataDir = fullfile('..', '..', 'rawdata');
 % get randomized stimulus conditions
-[log.data.trueEye, log.data.stimuli]  = createCounterbalancedPseudorandomizedConditions(trueColorDirectory);
+[log.data.trueEye, log.data.trueColorRotation, log.data.stimuli]  = createCounterbalancedPseudorandomizedConditions(trueColorDirectory);
 
 % get number of trials from the length of stimuli 
 numTrials = length(log.data.trueEye);
@@ -89,6 +89,19 @@ for side = 1:length(log.data.trueEye)
         log.data.trueEyeBinary(side) = 1;
     else
         error('Assignment for true color side is neither left nor right')
+    end
+end
+
+% rotation is a cell array containing either 'clockwise' or
+% 'counter-clockwise' -> convert into 0 and 1 for easy and fast assignment
+log.data.trueColorRotationDegrees = zeros(numTrials,1);
+for rotation = 1:length(log.data.trueEye)
+    if strcmp(log.data.trueColorRotation{rotation}, 'clockwise')
+        log.data.trueColorRotationDegrees(rotation) = 10;
+    elseif strcmp(log.data.trueColorRotation{rotation}, 'counter-clockwise')
+        log.data.trueColorRotationDegrees(rotation) = -10;
+    else
+        error('Assignment for rotation direction is neither clockwise nor counter-clockwise')
     end
 end
 
@@ -207,6 +220,10 @@ try
         % stimulus is presented 
         trueColorBufferId       = sum(log.data.trueEyeBinary(trial));
         invertedColorBufferId   = sum(~log.data.trueEyeBinary(trial));
+        
+        % Determine in which direction the true color and the inverted
+        % color stimulus are rotated
+        rotationAngle = log.data.trueColorRotationDegrees;
 
         % Select   left-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, trueColorBufferId);
@@ -216,7 +233,8 @@ try
         Screen('FillRect', ptb.window, ptb.grey, ptb.grayRect);                          % gray background on checkerboard
         % FORGROUND
         trueColorTexture = Screen('MakeTexture', ptb.window, trueColorStimImg);         % create texture for stimulus
-        Screen('DrawTexture', ptb.window, trueColorTexture, [], ptb.destinationRect);   % draw stimulus
+        Screen('DrawTexture', ptb.window, trueColorTexture, [], ...
+            ptb.destinationRect, rotationAngle);                                        % draw stimulus
 
         % Select right-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, invertedColorBufferId);
@@ -226,7 +244,8 @@ try
         Screen('FillRect', ptb.window, ptb.grey, ptb.grayRect);                         % gray background on checkerboard
         % FORGROUND
         invertedColorTexture = Screen('MakeTexture', ptb.window, invertedColorStimImg);     % create texture for stimulus
-        Screen('DrawTexture', ptb.window, invertedColorTexture, [], ptb.destinationRect);   % draw stimulus
+        Screen('DrawTexture', ptb.window, invertedColorTexture, [], ...
+            ptb.destinationRect, -rotationAngle);                                       % draw stimulus
 
         % Tell PTB drawing is finished for this frame:
         Screen('DrawingFinished', ptb.window);
