@@ -34,6 +34,11 @@ design.useET = false;
 stimDirectory = fullfile('..', '..', 'stimuli');
 trueColorDirectory = fullfile(stimDirectory, 'true_color');
 invertedColorDirectory = fullfile(stimDirectory, 'inverted');
+maskDirectory = fullfile(stimDirectory, 'color_masks');
+% read in the csv table containing the RGB values of "typical" memory color
+% and inverted memory color
+colorTableDir = fullfile('..','..','stimuli','representative_pixels.csv');
+colorTable = readtable(colorTableDir, 'TextType','string');
 
 % resize stimuli
 % define a rectangle where the stimulus is drawn
@@ -139,6 +144,8 @@ try
     
     %% Get design settings
     design = designSettings(log.language,design);
+    % read in the subject specific table with equiluminant color values
+    equilumColorTable = readtable(fullfile(log.subjectDirectory,'equiluminantColorTable.csv'));
     
     %% Inclusion of eye tracker
     if design.useET
@@ -209,12 +216,43 @@ try
     for trial = 1:4 %length(numTrials)
         trueColorStimPath       = fullfile(trueColorDirectory, log.data.stimuli{trial});
         invertedColorStimPath   = fullfile(invertedColorDirectory, log.data.stimuli{trial});
+        maskStimPath            = fullfile(maskDirectory, log.data.stimuli{trial});
         % imread does not read in the alpha channel by default. We need to
         % get it from the third return value and add to the img
         [trueColorStimImg, ~, trueAlpha]            = imread(trueColorStimPath);
         [invertedColorStimImg, ~, invertedAlpha]    = imread(invertedColorStimPath);
-        trueColorStimImg(:,:,4)         = trueAlpha;
-        invertedColorStimImg(:,:,4)     = invertedAlpha;
+        maskImg = imread(maskStimPath);
+        % get the representative pixel values for the current stimuli
+        % first get the right index
+        currentIdx = find(colorTable.stimuli==log.data.stimuli{trial});
+        % get typical RGB values of stimuli
+        trueR = colorTable.true_R(currentIdx);
+        trueG = colorTable.true_G(currentIdx);
+        trueB = colorTable.true_B(currentIdx);
+
+        invR = colorTable.inv_R(currentIdx);
+        invG = colorTable.inv_G(currentIdx);
+        invB = colorTable.inv_B(currentIdx);
+        % get equiluminant factor
+        trueRFactor = equilumColorTable.true_R(currentIdx);
+        trueGFactor = equilumColorTable.true_G(currentIdx);
+        trueBFactor = equilumColorTable.true_B(currentIdx);
+
+        invRFactor = equilumColorTable.true_R(currentIdx);
+        invGFactor = equilumColorTable.true_G(currentIdx);
+        invBFactor = equilumColorTable.true_B(currentIdx);
+        
+        % apply luminanc correction
+        trueColorStimImg(:,:,1) = trueColorStimImg(:,:,1)./trueR*trueRFactor;
+        trueColorStimImg(:,:,2) = trueColorStimImg(:,:,2)./trueG*trueGFactor;
+        trueColorStimImg(:,:,3) = trueColorStimImg(:,:,3)./trueB*trueBFactor;
+        % add alpha channel
+        trueColorStimImg(:,:,4) = trueAlpha;
+        invertedColorStimImg(:,:,1) = invertedColorStimImg(:,:,1)./invR*invRFactor;
+        invertedColorStimImg(:,:,2) = invertedColorStimImg(:,:,2)./invG*invGFactor;
+        invertedColorStimImg(:,:,3) = invertedColorStimImg(:,:,3)./invB*invBFactor;
+        % add alph channel
+        invertedColorStimImg(:,:,4) = invertedAlpha;
         
         % Determine on which eye the true color and the inverted color
         % stimulus is presented 
