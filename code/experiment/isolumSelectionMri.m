@@ -1,91 +1,75 @@
+function isolumSelectionMri(sub)
+% get equiluminant colors using the flicker method
+% The function reads in a table with RGB values of diagnostic colors for a
+% set of stimlui and the corresonding RGB values of the inverted color in
+% CIELab* space.
+% Each color is presented with its inversion and luminance can be adjusted
+% until the colored rectangles do not flicker anymore (i.e., they are
+% equiluminant
+% The resulting table is then saved in the subject directory
+
+if nargin < 1
+    sub = 'sub-test';
+end
+if isnumeric(sub)
+    sub = sprintf('sub-%02d',sub);
+end
 % get all the important setting information
 PsychDefaultSetup(2);
 ptb = PTBSettings();
 
-% ------------ gamma LUT  -------------
-% gamma_mon = textread([path_imgs, 'spc_psyRiv_201003_R_gamma.txt']);
+KbName('UnifyKeyNames');
+% Define response buttons
+terminateButton     = KbName('ESCAPE'); % ESC
+lumIncreaseButton   = KbName('LeftArrow'); % 1
+lumDecreaseButton   = KbName('RightArrow'); % Q
+confirmButton       = KbName('Space'); % Space
 
-scanning_flag = input('Scanning? (no = 0, yes = 1): ');
-
-if scanning_flag
-    
-    % Define response buttons
-    terminateButton     = 30; % I'm not sure which one this is on the button box
-    lumIncreaseButton   = 32; % Button beneath index finger
-    lumDecreaseButton   = 33; % Middle finger response
-    confirmButton       = 34; % Button on the left side of the box
-
-%     terminateButton     = 30; % I'm not sure which one this is on the button box
-%     lumIncreaseButton   = 4; % Button beneath index finger
-%     lumDecreaseButton   = 3; % Middle finger response
-%     confirmButton       = 5; % Button on the left side of the box
-
-    
-    displayWidth        = 800;
-    displayHeight       = 600;
-        
-else
-    KbName('UnifyKeyNames');
-    % Define response buttons
-    terminateButton     = KbName('ESCAPE'); % ESC
-    lumIncreaseButton   = KbName('LeftArrow'); % 1
-    lumDecreaseButton   = KbName('RightArrow'); % Q
-    confirmButton       = KbName('Space'); % Space
-
-    displayWidth        = 800;
-    displayHeight       = 600;
-
-        
-%     gam_mac = img_gammaLUT(repmat((0:255)',1,3), 2.2);
-%     LUT = img_gammaLUT(gam_mac, 1);
+% read in setup specific gamma correction table
+switch ptb.SetUp
+    case 'CIN-personal'
+        LUT = readmatrix('gammaLUT.txt'); % lookup table to make monitor linear
+    case 'CIN-experimentroom'
+        LUT = textread('spc_mrz3t_gammaLUT.txt'); % img_gammaLUT(gamma_mon,1); % lookup table to make monitor linear
+    case 'MPI'
+        LUT = textread('spc_mrz3t_gammaLUT.txt'); % img_gammaLUT(gamma_mon,1); % lookup table to make monitor linear
+    otherwise
+        error('No valid setup choise')
 end
 
-% check what this is doing
-LUT = textread('spc_mrz3t_gammaLUT.txt'); % img_gammaLUT(gamma_mon,1); % lookup table to make monitor linear
+% Read in table with typical RGB values for each stimulus
+colorTableDir = fullfile('..','..','stimuli','representative_pixels.csv');
+colorTable = readtable(colorTableDir, 'TextType','string');
+numColors = size(colorTable,1);
+% shuffle table 
+randSeq = randperm(numColors);
+colorTable = colorTable(randSeq,:);
 
+% create copy of color table to store the adjusted RGB - values in
+equilumColorTable = colorTable;
+
+% create subject directory to store the resulting table in
+subjectDirectory = fullfile('..','..','rawdata',sub);
+outputDir = fullfile(subjectDirectory,'equiluminantColorTable.csv');
+if (~isfolder(subjectDirectory))
+    mkdir(subjectDirectory);
+end
+
+% stepsize with which the luminance should be increased/decreased
+stepSize = 0.05;
 
 xSize = ptb.screenXpixels;
 ySize = ptb.screenYpixels;
 
-% Screen('TextStyle', ptb.window ,1); % 1: BOLD
+% rectangle where color is shown
+rectCoordinates = round([...
+    ptb.xCenter-.15*xSize ...
+    ptb.yCenter-.15*ySize ...
+    ptb.xCenter+.15*xSize ...
+    ptb.yCenter+.15*ySize]);
 
-% Enable alpha blending with proper blend-function. We need it
-% for drawing of smoothed points:
-% Screen('BlendFunction', ptb.window, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-% black = BlackIndex(w);
-lum = 1; %255;
-
-% Background colors and initial luminance settings
-trueColor.red    = [0.89040261 0.07737457 0.07445575];
-trueColor.green  = [0.33625086 0.51528191 0.28597812];
-trueColor.orange = [0.90565069 0.39444017 0.11520369];
-trueColor.yellow = [0.90866778 0.78573948 0.11242274];
-
-invColor.red    = [0.00866076 0.57562243 0.83034924];
-invColor.green  = [0.5571594  0.41451602 0.65644618];
-invColor.orange = [0.05491524 0.65910068 0.9429003];
-invColor.yellow = [0.12867932 0.81841307 0.98263644];
-
+lum = 255;
 grey = [ptb.grey ptb.grey ptb.grey];
-
-% Define comparison stimuli
-nCompStim = 13;
-rangeCompStim = .1; % Raised from .15 to .2 because luminance differences are less noticeable in the scanner
-
-% Note that the lumFactors are assymmetrical because there we're closer to
-% the upper bound of possible stimulus luminances given by the maximum
-% output of the RGB guns than the lower bounds.
-lumFactors = .9-rangeCompStim:(2*rangeCompStim)/(nCompStim-1):.9+rangeCompStim;
-
-
-% HideCursor;	% Hide the mouse cursor
-% Priority(MaxPriority(ptb.window));
-
-% Text settings
-% Screen('TextSize', ptb.window, 21);
-% Screen('TextFont', ptb.window, 'Helvetica');
-% Screen('TextColor', ptb.window, [255 255 0]);
 
 % Prepare instruction screen
 instructionStr = sprintf(['COLOR ADJUSTMENT\n\n'...
@@ -123,31 +107,27 @@ while 1
     end
 end
 
-% Use these variables to read information from in each 'for' iteration
-allColors = {...
-    trueColor.red, ...
-    trueColor.green, ...
-    trueColor.orange, ...
-    trueColor.yellow, ...
-    invColor.red, ...
-    invColor.green, ... 
-    invColor.orange, ...
-    invColor.yellow ...
-    };
-    
-% Randomize sequence
-randSeq = randperm(numel(allColors));
-allColors = allColors(randSeq);
-
 % Output will be stored in this matrix (Columns 1-3 correspond to R, G, & B)
-rgbIsolum = zeros(numel(allColors), 3);
-xyYIsolum = rgbIsolum; 
+xyYIsolum = zeros(size(colorTable,1));
 
 % Iterate over all colors that need to be adjusted
-for curCol = 1:numel(allColors)
-        
-    curDiagColor = allColors{curCol};
-    curLumFactor = 1; %randi(nCompStim);
+for curCol = 1:numColors
+    % Get current true color values
+    curTrueR = colorTable.true_R(curCol);
+    curTrueG = colorTable.true_G(curCol);
+    curTrueB = colorTable.true_B(curCol);
+    curTrueColor = [curTrueR curTrueG curTrueB];
+    
+    % Get current inverted color values
+    curFalseR = colorTable.inv_R(curCol);
+    curFalseG = colorTable.inv_G(curCol);
+    curFalseB = colorTable.inv_B(curCol);
+    curFalseColor = [curFalseR curFalseG curFalseB];
+
+    curTrueLumFactor = 1; 
+    curFalseLumFactor = 1;
+    maxCurTrueLumFactor = 255/max(curTrueColor);
+    maxCurFalseLumFactor = 255/max(curFalseColor);
     
     curFrame = 1;
     spaceDown = 0;  % Has P pressed the space bar?
@@ -155,35 +135,22 @@ for curCol = 1:numel(allColors)
     % Color adjustment
     while ~spaceDown
         if curFrame > 1
-            % Background
             % Select   left-eye image buffer for drawing:
             Screen('SelectStereoDrawBuffer', ptb.window, 0);
-%             Screen('FillRect', ptb.window, img_gammaConvert(LUT,round(lum*curInvColor)));
-
-            if mod(curFrame,2) == 1 % Gray
-                Screen('FillRect',ptb.window, img_gammaConvert(LUT,lum*grey), round([ptb.xCenter-.15*xSize  ptb.yCenter-.15*ySize  ptb.xCenter+.15*xSize ptb.yCenter+.15*ySize] ));
-            elseif mod(curFrame,2) == 0 % Colored
-                Screen('FillRect',ptb.window, img_gammaConvert(LUT,lum*curDiagColor*lumFactors(curLumFactor)), round([ptb.xCenter-.15*xSize  ptb.yCenter-.15*ySize  ptb.xCenter+.15*xSize ptb.yCenter+.15*ySize] ));
+            if mod(curFrame,2) == 1 % Inversed color
+                Screen('FillRect',ptb.window, img_gammaConvert(LUT,round(curFalseColor*curFalseLumFactor)/lum), rectCoordinates);
+            elseif mod(curFrame,2) == 0 % True color
+                Screen('FillRect',ptb.window, img_gammaConvert(LUT,round(curTrueColor*curTrueLumFactor)/lum), rectCoordinates);
             end
 
-            % Show color name and RGB values at the top
-            colorStr = sprintf('%1.2f ',img_gammaConvert(LUT,lum*curDiagColor*lumFactors(curLumFactor)));
-            Screen('DrawText', ptb.window, ['RGB-values: ' colorStr],   round(ptb.xCenter-.15*xSize),  round(ptb.yCenter-.2*ySize), ptb.white); 
-
-            % Show resulting color at the bottom 
-            Screen('FillRect',ptb.window, img_gammaConvert(LUT,round(lum*curDiagColor*lumFactors(curLumFactor))), round([ptb.xCenter-.15*xSize  ptb.yCenter+.175*ySize  ptb.xCenter+.15*xSize ptb.yCenter+.2*ySize]));
-            % Select   righ-eye image buffer for drawing:
+            % Select   right-eye image buffer for drawing:
             Screen('SelectStereoDrawBuffer', ptb.window, 1);
-%             Screen('FillRect', ptb.window, img_gammaConvert(LUT,round(lum*curInvColor)));
-
-            if mod(curFrame,2) == 1 % Gray
-                Screen('FillRect',ptb.window, img_gammaConvert(LUT,lum*grey), round([ptb.xCenter-.15*xSize  ptb.yCenter-.15*ySize  ptb.xCenter+.15*xSize ptb.yCenter+.15*ySize] ));
-            elseif mod(curFrame,2) == 0 % Colored
-                Screen('FillRect',ptb.window, img_gammaConvert(LUT,lum*curDiagColor*lumFactors(curLumFactor)), round([ptb.xCenter-.15*xSize  ptb.yCenter-.15*ySize  ptb.xCenter+.15*xSize ptb.yCenter+.15*ySize] ));
+            if mod(curFrame,2) == 1 % Inversed color
+                Screen('FillRect',ptb.window, img_gammaConvert(LUT,round(curFalseColor*curFalseLumFactor)/lum), rectCoordinates);
+            elseif mod(curFrame,2) == 0 % True color
+                Screen('FillRect',ptb.window, img_gammaConvert(LUT,round(curTrueColor*curTrueLumFactor)/lum), rectCoordinates);
             end
 
-            % Show resulting color at the bottom 
-            Screen('FillRect',ptb.window, img_gammaConvert(LUT,round(lum*curDiagColor*lumFactors(curLumFactor))), round([ptb.xCenter-.15*xSize  ptb.yCenter+.175*ySize  ptb.xCenter+.15*xSize ptb.yCenter+.2*ySize]));
             Screen('DrawingFinished', ptb.window); % Tell PTB that no further drawing commands will follow before Screen('Flip')
         end
     
@@ -198,23 +165,46 @@ for curCol = 1:numel(allColors)
                     break   % User terminated execution by pressing ESC               
 
                 case lumIncreaseButton
-                    curLumFactor = curLumFactor+1;
-                    if  curLumFactor > nCompStim, curLumFactor = nCompStim; end
+                    curTrueLumFactor = curTrueLumFactor+stepSize;
+                    curFalseLumFactor = curFalseLumFactor-stepSize;
 
                 case lumDecreaseButton
-                    curLumFactor = curLumFactor-1;
-                    if  curLumFactor < 1, curLumFactor = 1; end
+                    curTrueLumFactor = curTrueLumFactor-stepSize;
+                    curFalseLumFactor = curFalseLumFactor+stepSize;
 
                 case confirmButton
-                    rgbIsolum(curCol, 1:3) = curDiagColor*lumFactors(curLumFactor);   % Save current settings
-                    xyYIsolum(curCol, 1:3) = XYZToxyY(SRGBPrimaryToXYZ(curDiagColor'*lumFactors(curLumFactor)))';
+                    % Save current settings
+                    xyYIsolum(curCol, 1:3) = XYZToxyY(SRGBPrimaryToXYZ(curTrueColor'*curTrueLumFactor))';
                     disp('--------------------------------------------------------------');
                     fprintf('Adjustment made for stimulus %i:\nx\ty\tY\t\tR\tG\tB\n%.2f\t%.2f\t%.2f\t\t%.2f\t%.2f\t%.2f\n', ...
                         curCol, xyYIsolum(curCol,1), xyYIsolum(curCol,2), xyYIsolum(curCol,3), ...
-                        rgbIsolum(curCol,1), rgbIsolum(curCol,2), rgbIsolum(curCol,3));
+                        trueRgbIsolum(curCol,1), trueRgbIsolum(curCol,2), trueRgbIsolum(curCol,3));
+                    % save new color values in table
+                    equilumColorTable.true_R(curCol) = curTrueColor(1)*curTrueLumFactor;
+                    equilumColorTable.true_G(curCol) = curTrueColor(2)*curTrueLumFactor;
+                    equilumColorTable.true_B(curCol) = curTrueColor(3)*curTrueLumFactor;
+
+                    equilumColorTable.inv_R(curCol) = curFalseColor(1)*curFalseLumFactor;
+                    equilumColorTable.inv_G(curCol) = curFalseColor(2)*curFalseLumFactor;
+                    equilumColorTable.inv_B(curCol) = curFalseColor(3)*curFalseLumFactor;
+
                     while KbCheck; end % Wait until all keys have been released
                     spaceDown = 1;    % P confirmed adjustment
             end % switch
+
+            % Make sure the luminance factor does not exceed boundaries
+            if curTrueLumFactor > maxCurTrueLumFactor 
+                curTrueLumFactor = maxCurTrueLumFactor; 
+            end
+            if  curFalseLumFactor > maxCurFalseLumFactor 
+                curFalseLumFactor = maxCurFalseLumFactor; 
+            end
+            if curTrueLumFactor <= 0
+                curFalseLumFactor = 0;
+            end
+            if curFalseLumFactor <= 0
+                curFalseLumFactor = 0;
+            end
         elseif keyIsDown == 0
             responseKeyReleased = 1;
         end % if keyIsDown
@@ -224,16 +214,13 @@ for curCol = 1:numel(allColors)
 end % for curCol = 1:numel(allProtos)
 disp('--------------------------------------------------------------');
 
-% Undo randomization for RGB and xyY color coordinates
-rgbIsolum(randSeq,:) = rgbIsolum;
+% Undo randomization for color tables
+colorTable(randSeq,:) = colorTable;
+equilumColorTable(randSeq,:) = equilumColorTable;
+% save equiluminant color table
+writetable(equilumColorTable, outputDir)
+
 xyYIsolum(randSeq,:) = xyYIsolum;
-
-% Output structure
-isolum.rgbIsolum = rgbIsolum;
-isolum.xyYIsolum = xyYIsolum;
-isolum.names = {'redDim' 'greenDim' 'blueDim' 'yellowDim' ...
-    'redBrt' 'greenBrt' 'blueBrt' 'yellowBrt'};
-
 
 Priority(0);
 ShowCursor
@@ -242,32 +229,40 @@ ListenChar(0);
 Screen('CloseAll');
 
 % Show resulting colors
-img = zeros(700, 700, 3);
+img = zeros(700, 1000, 3);
 
 % Gray background
-gray = img_gammaConvert(LUT,round(lum*invColor.bkgrd));
+gray = img_gammaConvert(LUT,round(lum*grey));
 img(:,:,1) = gray(1)/255;
 img(:,:,2) = gray(2)/255;
 img(:,:,3) = gray(3)/255;
 
-rgbIsolumGamCor = img_gammaConvert(LUT, rgbIsolum);
+blueIdx     = find(colorTable.stimuli=='blue_nivea.png');
+redIdx      = find(colorTable.stimuli=='red_tomato.png');
+rangeIdx    = find(colorTable.stimuli=='orange_pumpkin.png');
+yellowIdx   = find(colorTable.stimuli=='yellow_banana.png');
+greenIdx    = find(colorTable.stimuli=='green_brokkoli_1.png');
 
 % Add colors
-img(101:300, 101:300, 1) = rgbIsolumGamCor(1,1);
-img(101:300, 101:300, 2) = rgbIsolumGamCor(1,2);
-img(101:300, 101:300, 3) = rgbIsolumGamCor(1,3);
+img(101:300, 101:300, 1) = colorTable.true_R(blueIdx)/lum;
+img(101:300, 101:300, 2) = colorTable.true_G(blueIdx)/lum;
+img(101:300, 101:300, 3) = colorTable.true_B(blueIdx)/lum;
 
-img(101:300, 401:600, 1) = rgbIsolumGamCor(2,1);
-img(101:300, 401:600, 2) = rgbIsolumGamCor(2,2);
-img(101:300, 401:600, 3) = rgbIsolumGamCor(2,3);
+img(101:300, 401:600, 1) = colorTable.true_R(redIdx)/lum;
+img(101:300, 401:600, 2) = colorTable.true_G(redIdx)/lum;
+img(101:300, 401:600, 3) = colorTable.true_B(redIdx)/lum;
 
-img(401:600, 101:300, 1) = rgbIsolumGamCor(3,1);
-img(401:600, 101:300, 2) = rgbIsolumGamCor(3,2);
-img(401:600, 101:300, 3) = rgbIsolumGamCor(3,3);
+img(401:600, 101:300, 1) = colorTable.true_R(rangeIdx)/lum;
+img(401:600, 101:300, 2) = colorTable.true_G(rangeIdx)/lum;
+img(401:600, 101:300, 3) = colorTable.true_B(rangeIdx)/lum;
 
-img(401:600, 401:600, 1) = rgbIsolumGamCor(4,1);
-img(401:600, 401:600, 2) = rgbIsolumGamCor(4,2);
-img(401:600, 401:600, 3) = rgbIsolumGamCor(4,3);
+img(401:600, 401:600, 1) = colorTable.true_R(yellowIdx)/lum;
+img(401:600, 401:600, 2) = colorTable.true_G(yellowIdx)/lum;
+img(401:600, 401:600, 3) = colorTable.true_B(yellowIdx)/lum;
+
+img(251:550, 701:900, 1) = colorTable.true_R(greenIdx)/lum;
+img(251:550, 701:900, 2) = colorTable.true_G(greenIdx)/lum;
+img(251:550, 701:900, 3) = colorTable.true_B(greenIdx)/lum;
 
 % Show colors
 figure;
@@ -275,27 +270,38 @@ subplot(1,2,1);
 imshow(img);
 
 % Gray background
-gray = img_gammaConvert(LUT,round(lum*invColor.bkgrd));
+gray = img_gammaConvert(LUT,round(lum*grey));
 img(:,:,1) = gray(1)/255;
 img(:,:,2) = gray(2)/255;
 img(:,:,3) = gray(3)/255;
 
+blueIdx     = find(colorTable.stimuli=='blue_nivea.png');
+redIdx      = find(colorTable.stimuli=='red_tomato.png');
+rangeIdx   = find(colorTable.stimuli=='orange_pumpkin.png');
+yellowIdx   = find(colorTable.stimuli=='yellow_banana.png');
+greenIdx    = find(colorTable.stimuli=='green_brokkoli_1.png');
+
 % Add colors
-% img(101:300, 101:300, 1) = rgbIsolumGamCor(5,1);
-% img(101:300, 101:300, 2) = rgbIsolumGamCor(5,2);
-% img(101:300, 101:300, 3) = rgbIsolumGamCor(5,3);
-% 
-% img(101:300, 401:600, 1) = rgbIsolumGamCor(6,1);
-% img(101:300, 401:600, 2) = rgbIsolumGamCor(6,2);
-% img(101:300, 401:600, 3) = rgbIsolumGamCor(6,3);
-% 
-% img(401:600, 101:300, 1) = rgbIsolumGamCor(7,1);
-% img(401:600, 101:300, 2) = rgbIsolumGamCor(7,2);
-% img(401:600, 101:300, 3) = rgbIsolumGamCor(7,3);
-% 
-% img(401:600, 401:600, 1) = rgbIsolumGamCor(8,1);
-% img(401:600, 401:600, 2) = rgbIsolumGamCor(8,2);
-% img(401:600, 401:600, 3) = rgbIsolumGamCor(8,3);
+img(101:300, 101:300, 1) = colorTable.inv_R(blueIdx)/lum;
+img(101:300, 101:300, 2) = colorTable.inv_G(blueIdx)/lum;
+img(101:300, 101:300, 3) = colorTable.inv_B(blueIdx)/lum;
+
+img(101:300, 401:600, 1) = colorTable.inv_R(redIdx)/lum;
+img(101:300, 401:600, 2) = colorTable.inv_G(redIdx)/lum;
+img(101:300, 401:600, 3) = colorTable.inv_B(redIdx)/lum;
+
+img(401:600, 101:300, 1) = colorTable.inv_R(rangeIdx)/lum;
+img(401:600, 101:300, 2) = colorTable.inv_G(rangeIdx)/lum;
+img(401:600, 101:300, 3) = colorTable.inv_B(rangeIdx)/lum;
+
+img(401:600, 401:600, 1) = colorTable.inv_R(yellowIdx)/lum;
+img(401:600, 401:600, 2) = colorTable.inv_G(yellowIdx)/lum;
+img(401:600, 401:600, 3) = colorTable.inv_B(yellowIdx)/lum;
+
+img(251:550, 701:900, 1) = colorTable.inv_R(greenIdx)/lum;
+img(251:550, 701:900, 2) = colorTable.inv_G(greenIdx)/lum;
+img(251:550, 701:900, 3) = colorTable.inv_B(greenIdx)/lum;
+
 
 subplot(1,2,2);
 imshow(img);
@@ -357,7 +363,7 @@ if writeShaderFiles == 1
                 '\tScreen(''DrawTexture'') command as modulateColor, whereas a pixel in an odd-numbered\n'...
                 '\tring is assigned ''secondColor'': */\n'...
                 '\tgl_FragColor = mix(firstColor, secondColor, d);\n'...
-                '}'], rgbIsolumGamCor(curCol,1), rgbIsolumGamCor(curCol,2), rgbIsolumGamCor(curCol,3), ...
+                '}'], trueRgbIsolumGamCor(curCol,1), trueRgbIsolumGamCor(curCol,2), trueRgbIsolumGamCor(curCol,3), ...
                 rgbBkgrd(1), rgbBkgrd(2), rgbBkgrd(3), xSize, ySize);
             fclose(fid);
         end        
