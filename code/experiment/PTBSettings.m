@@ -1,6 +1,6 @@
 function ptb = PTBSettings()
 % Decide which set up to use
-SetUp = 'CIN-personal';
+ptb.SetUp = 'CIN-personal';
 
 % Turn initial start screen from white to black
 Screen('Preference', 'VisualDebugLevel', 1);
@@ -25,7 +25,7 @@ ptb.Keys.escape = KbName('ESCAPE');     ptb.KeyList1(ptb.Keys.escape)= double(1)
 ptb.Keys.yes    = KbName('y');          ptb.KeyList1(ptb.Keys.yes)   = double(1);
 ptb.Keys.no     = KbName('n');          ptb.KeyList1(ptb.Keys.no)    = double(1);
 ptb.Keys.debug  = 1;
-switch SetUp
+switch ptb.SetUp
     case 'CIN-personal'
         % subject keys
         ptb.Keys.left   = KbName('LeftArrow');  ptb.KeyList2(ptb.Keys.left)  = double(1);
@@ -121,7 +121,7 @@ PsychImaging('PrepareConfiguration');                                   % standa
 % PsychImaging('AddTask', 'General', 'UseVirtualFramebuffer');            % nice to have - not necessary, but suggested
 % PsychImaging('AddTask', 'General', 'UseFineGrainedTiming', 'Auto');     % makes timing even more efficient, but if the hardware does not support it, PsychImaging('OpenWindow') fails
 % PsychImaging('AddTask', 'General', 'UseFastOffscreenWindows');          % accelerates switching between drawing into onscreen and offscreen windows
-switch SetUp
+switch ptb.SetUp
     case 'CIN-personal'
         [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [0 0 1600 1080], [],[],4); 
         % Real world variable
