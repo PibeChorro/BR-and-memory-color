@@ -15,7 +15,6 @@ function img = img_gammaConvert(LUT, img, varargin)
 %
 % see img_gammaLUT.m
 
-invert_flag = 0;
 if ~isempty(varargin)
 	for i=1:length(varargin)
 		if strcmpi(varargin{i},'-1')
@@ -27,36 +26,29 @@ if ~isempty(varargin)
 end
 
 
-%if ~isempty(varargin), % img
-	flag3d=0;
-	if ndims(img)>2
-		flag3d=1;
-		[ny,nx,tmp]=size(img);
-		img=reshape(img,nx*ny,3); % 2D
-    end
+flag3d=0;
+if ndims(img)>2
+	flag3d=1;
+	[ny,nx,tmp]=size(img);
+	img=reshape(img,nx*ny,3); % 2D
+end
 
-	% make sure img goes from 0-255:
-	flag255=1;
-	if max(img(:))<=1
-		flag255=0;
-		img=floor(img*255.999); % [0,255]
-    end
+% make sure img goes from 0-255:
+flag255=1;
+if max(img(:))<=1
+	flag255=0;
+	img=floor(img*255.999); % [0,255]
+end
 
-	if invert_flag % invert the LUT
-		LUT = img_gammaLUT(LUT,1);
-    end
+% LUT transform:
+img(:,1)=LUT(img(:,1)+1,1);
+img(:,2)=LUT(img(:,2)+1,2);
+img(:,3)=LUT(img(:,3)+1,3);	
 
-	% LUT transform:
-	img(:,1)=LUT(img(:,1)+1,1);
-	img(:,2)=LUT(img(:,2)+1,2);
-	img(:,3)=LUT(img(:,3)+1,3);	
 
-	
-	
-	if ~flag255 % return it in same format as it came in
-		img=img/255;
-    end
-	if flag3d
-		img=reshape(img,ny,nx,3); % 3D
-    end
-%end;
+if ~flag255 % return it in same format as it came in
+	img=img/255;
+end
+if flag3d
+	img=reshape(img,ny,nx,3); % 3D
+end
