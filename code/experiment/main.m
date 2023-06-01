@@ -79,6 +79,16 @@ design.penWidth = 10;
 
 dataDir = fullfile('..', '..', 'rawdata');
 subNr = input('Enter subject Nr: ','s');
+correctRunInput = false;
+% check run input
+while ~correctRunInput
+    runNr = input('Enter run  Nr [1-6]:', 's');
+    [runNr,isNumber] = str2num(runNr);
+    if isNumber && runNr>0 && runNr<=6
+        correctRunInput = true;
+    end
+end
+
 sub = strcat('sub-', sprintf('%02s', subNr));
 % read in log mat file
 try
@@ -92,6 +102,7 @@ catch LOADING_ERROR
         error('Standard subject is not implemented yet')
     end
 end
+log.runNr = runNr;
 
 % check if there are subject specific stimuli
 trueColorDirectory = fullfile(log.subjectDirectory,'stimuli', 'true_color');
@@ -108,9 +119,19 @@ if isempty(trueStimuliNames) || isempty(invertedStimuliNames)
     error('No stimuli found in subject specific stimuli folder')
 end
 
-% get randomized stimulus conditions
-[log.data.trueEye, log.data.trueColorRotation, log.data.stimuli]  = createCounterbalancedPseudorandomizedConditions(trueColorDirectory);
-
+% get randomized stimulus conditions for subject
+if log.runNr == 1
+    createCounterbalancedPseudorandomizedConditions(log);
+end
+% read in csv table with conditions for run
+try
+    conditionsTableDir = fullfile(log.subjectDirectory,[log.sub sprintf('_run-%02d',log.runNr) '.csv']);
+    conditionsTable = readtable(conditionsTableDir,'Delimiter', ',');
+catch READINGERROR
+    error('could not read conditions table')
+end
+log.data.trueEye = conditionsTable.sides;
+log.data.stimuli = conditionsTable.stimuli;
 % get number of trials from the length of stimuli 
 numTrials = length(log.data.trueEye);
 % trueEye is a cell array containing either 'right' or 'left' -> convert
@@ -241,7 +262,7 @@ try
     TrialEnd = ExpStart;
     
     % Loop over trials
-    for trial = 1:4 %length(numTrials)
+    for trial = 1:numTrials
         %% Read in and process images
         trueColorStimPath       = fullfile(trueColorDirectory, log.data.stimuli{trial});
         invertedColorStimPath   = fullfile(invertedColorDirectory, log.data.stimuli{trial});
