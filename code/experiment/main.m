@@ -31,10 +31,8 @@ design.checkerBoardXFrequency      = 8;     % checkerboard background frequency 
 design.useET = false;
 
 %% stimuli related
-stimDirectory = fullfile('..', '..', 'stimuli');
-trueColorDirectory = fullfile(stimDirectory, 'true_color');
-invertedColorDirectory = fullfile(stimDirectory, 'inverted');
-maskDirectory = fullfile(stimDirectory, 'color_masks');
+originalStimDirectory = fullfile('..', '..', 'stimuli');
+maskDirectory = fullfile(originalStimDirectory, 'color_masks');
 % read in the csv table containing the RGB values of "typical" memory color
 % and inverted memory color
 colorTableDir = fullfile('..','..','stimuli','representative_pixels.csv');
@@ -78,7 +76,38 @@ design.penWidth = 10;
 % frog_1    | right     | 12.345        | 17.890        | true_color| 2.22          | 3.1           | 1.9               | 0.5               | 3             |
 % ....
 %
-log.dataDir = fullfile('..', '..', 'rawdata');
+
+dataDir = fullfile('..', '..', 'rawdata');
+subNr = input('Enter subject Nr: ','s');
+sub = strcat('sub-', sprintf('%02s', subNr));
+% read in log mat file
+try
+    load(fullfile(dataDir, sub, [sub '_log.mat']))
+catch LOADING_ERROR
+    fprintf('No log file was found. Either you did not perform the flicker method or you typed in the wrong subject Number\n')
+    loadDefault = input('Do you want to load a standard subject Y/N [Y]? ','s');
+    if (strcmp(loadDefault, 'n') || isempty(loadDefault))
+        error('No log was found and you chose not to use a standard subject')
+    else
+        error('Standard subject is not implemented yet')
+    end
+end
+
+% check if there are subject specific stimuli
+trueColorDirectory = fullfile(log.subjectDirectory,'stimuli', 'true_color');
+invertedColorDirectory = fullfile(log.subjectDirectory,'stimuli', 'inverted_color');
+% all the stimuli used
+trueStimuli = dir(fullfile(trueColorDirectory,'*.png'));
+trueStimuliNames = {trueStimuli(:).name};
+invertedStimuli = dir(fullfile(invertedColorDirectory,'*.png'));
+invertedStimuliNames = {invertedStimuli(:).name};
+if length(trueStimuliNames)~=length(invertedStimuliNames)
+    error('The number of stimuli for the true color and inverted color is not the same')
+end
+if isempty(trueStimuliNames) || isempty(invertedStimuliNames)
+    error('No stimuli found in subject specific stimuli folder')
+end
+
 % get randomized stimulus conditions
 [log.data.trueEye, log.data.trueColorRotation, log.data.stimuli]  = createCounterbalancedPseudorandomizedConditions(trueColorDirectory);
 
@@ -136,7 +165,6 @@ invertedColorBufferId   = 1; % 0=left; 1=right - just for ininitalization
 
 %% Subject input
 try
-    log = inputSubID(ptb, log);
     fprintf (log.sub);
     fprintf ('\n');
     fprintf (log.subjectDirectory);
@@ -224,34 +252,9 @@ try
         maskImg = imread(maskStimPath);
         % get the representative pixel values for the current stimuli
         % first get the right index
-        currentIdx = find(colorTable.stimuli==log.data.stimuli{trial});
-        % get typical RGB values of stimuli
-        trueR = colorTable.true_R(currentIdx);
-        trueG = colorTable.true_G(currentIdx);
-        trueB = colorTable.true_B(currentIdx);
-
-        invR = colorTable.inv_R(currentIdx);
-        invG = colorTable.inv_G(currentIdx);
-        invB = colorTable.inv_B(currentIdx);
-        % get equiluminant factor
-        trueRFactor = equilumColorTable.true_R(currentIdx);
-        trueGFactor = equilumColorTable.true_G(currentIdx);
-        trueBFactor = equilumColorTable.true_B(currentIdx);
-
-        invRFactor = equilumColorTable.true_R(currentIdx);
-        invGFactor = equilumColorTable.true_G(currentIdx);
-        invBFactor = equilumColorTable.true_B(currentIdx);
         
-        % apply luminanc correction
-        trueColorStimImg(:,:,1) = trueColorStimImg(:,:,1)./trueR*trueRFactor;
-        trueColorStimImg(:,:,2) = trueColorStimImg(:,:,2)./trueG*trueGFactor;
-        trueColorStimImg(:,:,3) = trueColorStimImg(:,:,3)./trueB*trueBFactor;
-        % add alpha channel
-        trueColorStimImg(:,:,4) = trueAlpha;
-        invertedColorStimImg(:,:,1) = invertedColorStimImg(:,:,1)./invR*invRFactor;
-        invertedColorStimImg(:,:,2) = invertedColorStimImg(:,:,2)./invG*invGFactor;
-        invertedColorStimImg(:,:,3) = invertedColorStimImg(:,:,3)./invB*invBFactor;
         % add alph channel
+        trueColorStimImg(:,:,4) = trueAlpha;
         invertedColorStimImg(:,:,4) = invertedAlpha;
         
         % Determine on which eye the true color and the inverted color

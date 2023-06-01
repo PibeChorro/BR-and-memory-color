@@ -17,6 +17,10 @@ end
 % get all the important setting information
 PsychDefaultSetup(2);
 ptb = PTBSettings();
+% create subject directory to save equiluminance table
+log = struct;
+log.dataDir = fullfile('..', '..', 'rawdata');
+log = inputSubID(ptb,log);
 
 KbName('UnifyKeyNames');
 % Define response buttons
@@ -49,10 +53,9 @@ colorTable = colorTable(randSeq,:);
 equilumColorTable = colorTable;
 
 % create subject directory to store the resulting table in
-subjectDirectory = fullfile('..','..','rawdata',sub);
-outputDir = fullfile(subjectDirectory,'equiluminantColorTable.csv');
-if (~isfolder(subjectDirectory))
-    mkdir(subjectDirectory);
+outputDir = fullfile(log.subjectDirectory,'equiluminantColorTable.csv');
+if (~isfolder(log.subjectDirectory))
+    mkdir(log.subjectDirectory);
 end
 
 % stepsize with which the luminance should be increased/decreased
@@ -176,9 +179,9 @@ for curCol = 1:numColors
                     % Save current settings
                     xyYIsolum(curCol, 1:3) = XYZToxyY(SRGBPrimaryToXYZ(curTrueColor'*curTrueLumFactor))';
                     disp('--------------------------------------------------------------');
-                    fprintf('Adjustment made for stimulus %i:\nx\ty\tY\t\tR\tG\tB\n%.2f\t%.2f\t%.2f\t\t%.2f\t%.2f\t%.2f\n', ...
-                        curCol, xyYIsolum(curCol,1), xyYIsolum(curCol,2), xyYIsolum(curCol,3), ...
-                        trueRgbIsolum(curCol,1), trueRgbIsolum(curCol,2), trueRgbIsolum(curCol,3));
+%                     fprintf('Adjustment made for stimulus %i:\nx\ty\tY\t\tR\tG\tB\n%.2f\t%.2f\t%.2f\t\t%.2f\t%.2f\t%.2f\n', ...
+%                         curCol, xyYIsolum(curCol,1), xyYIsolum(curCol,2), xyYIsolum(curCol,3), ...
+%                         trueRgbIsolum(curCol,1), trueRgbIsolum(curCol,2), trueRgbIsolum(curCol,3));
                     % save new color values in table
                     equilumColorTable.true_R(curCol) = curTrueColor(1)*curTrueLumFactor;
                     equilumColorTable.true_G(curCol) = curTrueColor(2)*curTrueLumFactor;
@@ -217,11 +220,16 @@ disp('--------------------------------------------------------------');
 % Undo randomization for color tables
 colorTable(randSeq,:) = colorTable;
 equilumColorTable(randSeq,:) = equilumColorTable;
+
+%% save results
 % save equiluminant color table
 writetable(equilumColorTable, outputDir)
+log.equiluminanceTable = equilumColorTable;
+save(fullfile(log.subjectDirectory, [log.sub '_log']),'log');
 
 xyYIsolum(randSeq,:) = xyYIsolum;
 
+%% show results
 Priority(0);
 ShowCursor
 % Enable keyboard output to Matlab
