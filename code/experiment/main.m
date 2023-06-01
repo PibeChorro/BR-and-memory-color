@@ -92,7 +92,7 @@ end
 sub = strcat('sub-', sprintf('%02s', subNr));
 % read in log mat file
 try
-    load(fullfile(dataDir, sub, [sub '_log.mat']))
+    load(fullfile(dataDir, sub, [sub '_equilumFlicker_log.mat']))
 catch LOADING_ERROR
     fprintf('No log file was found. Either you did not perform the flicker method or you typed in the wrong subject Number\n')
     loadDefault = input('Do you want to load a standard subject Y/N [Y]? ','s');

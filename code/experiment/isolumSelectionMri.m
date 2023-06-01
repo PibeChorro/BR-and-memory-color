@@ -225,7 +225,7 @@ equilumColorTable(randSeq,:) = equilumColorTable;
 % save equiluminant color table
 writetable(equilumColorTable, outputDir)
 log.equiluminanceTable = equilumColorTable;
-save(fullfile(log.subjectDirectory, [log.sub '_log']),'log');
+save(fullfile(log.subjectDirectory, [log.sub '_equilumFlicker_log']),'log');
 
 xyYIsolum(randSeq,:) = xyYIsolum;
 
