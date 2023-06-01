@@ -15,7 +15,7 @@ ptb.seed = rng('shuffle');
 % ListenChar(2);
 
 % Keyboard pre-setup
-KbName('UnifyKeyNames');
+% KbName('UnifyKeyNames'); % not needed if PsychDefaultSetup is called with a feature level >0
 ptb.KeyList1 = zeros (256, 1); % initiate an empty array that later, when keys are defined, is filled with the allowed keys
 ptb.KeyList2 = zeros (256, 1); % initiate an empty array that later, when keys are defined, is filled with the allowed keys
 ptb.usbTrg = 1; % If 1 --> wait for scanner triggers & check USB inputs.

@@ -242,13 +242,14 @@ try
     
     % Loop over trials
     for trial = 1:4 %length(numTrials)
+        %% Read in and process images
         trueColorStimPath       = fullfile(trueColorDirectory, log.data.stimuli{trial});
         invertedColorStimPath   = fullfile(invertedColorDirectory, log.data.stimuli{trial});
         maskStimPath            = fullfile(maskDirectory, log.data.stimuli{trial});
         % imread does not read in the alpha channel by default. We need to
         % get it from the third return value and add to the img
-        [trueColorStimImg, ~, trueAlpha]            = imread(trueColorStimPath);
-        [invertedColorStimImg, ~, invertedAlpha]    = imread(invertedColorStimPath);
+        [trueColorStimImg, ~, trueAlpha]            = imread(trueColorStimPath, 'png');
+        [invertedColorStimImg, ~, invertedAlpha]    = imread(invertedColorStimPath, 'png');
         maskImg = imread(maskStimPath);
         % get the representative pixel values for the current stimuli
         % first get the right index
@@ -257,6 +258,7 @@ try
         trueColorStimImg(:,:,4) = trueAlpha;
         invertedColorStimImg(:,:,4) = invertedAlpha;
         
+        %% prepare drawing of stimuli
         % Determine on which eye the true color and the inverted color
         % stimulus is presented 
         trueColorBufferId       = sum(log.data.trueEyeBinary(trial));
@@ -264,8 +266,9 @@ try
         
         % Determine in which direction the true color and the inverted
         % color stimulus are rotated
-        rotationAngle = log.data.trueColorRotationDegrees;
+        rotationAngle = log.data.trueColorRotationDegrees(trial);
 
+        %% draw and show stimuli
         % Select   left-eye image buffer for drawing:
         Screen('SelectStereoDrawBuffer', ptb.window, trueColorBufferId);
         % BACKGROUND
@@ -297,7 +300,7 @@ try
         vblOffset   = Screen('Flip', ptb.window, vblOnset+design.stimulusPresentationTime);
         TrialEnd    = vblOffset;
 
-        % save timing of stimuli
+        %% save timing of stimuli
         log.data.stimOnset(trial)     = vblOnset-ExpStart;
         log.data.stimOffset(trial)    = vblOffset-ExpStart;
         %... Check if Experimentors pressed escape ...%
