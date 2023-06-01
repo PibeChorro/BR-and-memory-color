@@ -19,14 +19,17 @@ catch PTBError
 end
 
 %% design related
-design.stimulusPresentationTime    = 2 - ptb.ifi/2;
-design.ITI                         = 1 - ptb.ifi/2;
-design.stimSizeInDegrees           = 5;
-design.stimSizeInPixels            = round(ptb.PixPerDegWidth*design.stimSizeInDegrees);
-design.grayBackgroundInDegrees     = 6;
-design.checkerBoardInDegrees       = 10;
-design.checkerBoardXFrequency      = 8;     % checkerboard background frequency along X
-design.checkerBoardXFrequency      = 8;     % checkerboard background frequency along Y
+design.stimulusPresentationTime = 2 - ptb.ifi/2;
+design.ITI                      = 1 - ptb.ifi/2;
+design.stimSizeInDegrees        = 5;
+design.stimSizeInPixels         = round(ptb.PixPerDegWidth*design.stimSizeInDegrees);
+design.grayBackgroundInDegrees  = 6;
+design.checkerBoardInDegrees    = 10;
+design.checkerBoardXFrequency   = 8;     % checkerboard background frequency along X
+design.checkerBoardXFrequency   = 8;     % checkerboard background frequency along Y
+design.rotationLowerBound       = 8;
+design.rotationUpperBound       = 12;
+design.rotationDiff             = 20;
 % Use eyetracker?
 design.useET = false;
 
@@ -150,15 +153,15 @@ end
 % rotation is a cell array containing either 'clockwise' or
 % 'counter-clockwise' -> convert into 0 and 1 for easy and fast assignment
 log.data.trueColorRotationDegrees = zeros(numTrials,1);
-for rotation = 1:length(log.data.trueEye)
-    if strcmp(log.data.trueColorRotation{rotation}, 'clockwise')
-        log.data.trueColorRotationDegrees(rotation) = 10;
-    elseif strcmp(log.data.trueColorRotation{rotation}, 'counter-clockwise')
-        log.data.trueColorRotationDegrees(rotation) = -10;
-    else
-        error('Assignment for rotation direction is neither clockwise nor counter-clockwise')
-    end
-end
+% for rotation = 1:length(log.data.trueEye)
+%     if strcmp(log.data.trueColorRotation{rotation}, 'clockwise')
+%         log.data.trueColorRotationDegrees(rotation) = 10;
+%     elseif strcmp(log.data.trueColorRotation{rotation}, 'counter-clockwise')
+%         log.data.trueColorRotationDegrees(rotation) = -10;
+%     else
+%         error('Assignment for rotation direction is neither clockwise nor counter-clockwise')
+%     end
+% end
 
 % preallocate data
 log.data.stimOnset           = zeros(numTrials,1);
@@ -285,12 +288,13 @@ try
         trueColorBufferId       = sum(log.data.trueEyeBinary(trial));
         invertedColorBufferId   = sum(~log.data.trueEyeBinary(trial));
         
-        % Determine in which direction the true color and the inverted
-        % color stimulus are rotated
-        rotationAngle = log.data.trueColorRotationDegrees(trial);
+        % Determine in which direction and to which degrees the true color 
+        % and the inverted color stimulus are rotated
+        rotationAngleTrueColor = randi([design.rotationLowerBound design.rotationUpperBound])*(randi([0 1])-1/2)*2; % log.data.trueColorRotationDegrees(trial);
+        rotationAngleFalseColor = -(design.rotationDiff-abs(rotationAngleTrueColor))*sign(rotationAngleTrueColor);
 
         %% draw and show stimuli
-        % Select   left-eye image buffer for drawing:
+        % Select image buffer for true color image:
         Screen('SelectStereoDrawBuffer', ptb.window, trueColorBufferId);
         % BACKGROUND
         Screen('FrameRect', ptb.window ,ptb.black ,design.bigFrame, design.penWidth);   % the big frame
@@ -299,9 +303,9 @@ try
         % FORGROUND
         trueColorTexture = Screen('MakeTexture', ptb.window, trueColorStimImg);         % create texture for stimulus
         Screen('DrawTexture', ptb.window, trueColorTexture, [], ...
-            ptb.destinationRect, rotationAngle);                                        % draw stimulus
+            ptb.destinationRect, rotationAngleTrueColor);                                        % draw stimulus
 
-        % Select right-eye image buffer for drawing:
+        % Select image buffer for inverted color image:
         Screen('SelectStereoDrawBuffer', ptb.window, invertedColorBufferId);
         % BACKGROUND
         Screen('FrameRect', ptb.window ,ptb.black ,design.bigFrame, design.penWidth);   % the big frame
@@ -310,7 +314,7 @@ try
         % FORGROUND
         invertedColorTexture = Screen('MakeTexture', ptb.window, invertedColorStimImg);     % create texture for stimulus
         Screen('DrawTexture', ptb.window, invertedColorTexture, [], ...
-            ptb.destinationRect, -rotationAngle);                                       % draw stimulus
+            ptb.destinationRect, rotationAngleFalseColor);                                  % draw stimulus
 
         % Tell PTB drawing is finished for this frame:
         Screen('DrawingFinished', ptb.window);
@@ -324,6 +328,7 @@ try
         %% save timing of stimuli
         log.data.stimOnset(trial)     = vblOnset-ExpStart;
         log.data.stimOffset(trial)    = vblOffset-ExpStart;
+        log.data.trueColorRotationDegrees(trial) = rotationAngleTrueColor;
         %... Check if Experimentors pressed escape ...%
         % DOES NOT WORK!!!
         [pressed, firstPress] = KbQueueCheck(ptb.Keyboard1);
