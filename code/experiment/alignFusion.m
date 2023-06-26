@@ -5,6 +5,7 @@ function [horizontalOffset,verticalOffset] = alignFusion(ptb, design)
 %   returns: the offset in x and y 
     horizontalOffset = 0;
     verticalOffset = 0;
+    change = 0.003;
     framesize = max([ptb.screenXpixels, ptb.screenYpixels])/3; 
   
     while true
@@ -30,23 +31,23 @@ function [horizontalOffset,verticalOffset] = alignFusion(ptb, design)
         Screen('Flip', ptb.window);
 
 %         [KeyIsDown, ~, keyCode, ~] = KbCheck(ptb.Keyboard1);
-        [KeyIsDown, ~, keyCode, ~] = KbCheck(ptb.Keyboard2);
+        [KeyIsDown, ~, keyCode, ~] = KbCheck;%(ptb.Keyboard2);
 
         if KeyIsDown
             if find(keyCode)==ptb.Keys.left
-                horizontalOffset = horizontalOffset-0.01;
+                horizontalOffset = horizontalOffset-change;
                 disp('=>pressed LEFT')
             elseif find(keyCode)==ptb.Keys.right
-                horizontalOffset = horizontalOffset+0.01;
+                horizontalOffset = horizontalOffset+change;
                 disp('=>pressed RIGHT')
             elseif find(keyCode)==ptb.Keys.up
-                verticalOffset = verticalOffset+0.01;
+                verticalOffset = verticalOffset+change;
                 disp('=>pressed UP')
             elseif find(keyCode)==ptb.Keys.down
-                verticalOffset = verticalOffset-0.01;
-                disp('=>pressed Down')
+                verticalOffset = verticalOffset-change;
+                disp('=>pressed DOWN')
             elseif find(keyCode)==ptb.Keys.accept
-                disp('=>pressed Space')
+                disp('=>pressed SPACE')
                 break
             else
                 disp(['Pressed' num2str(KbName(find(keyCode)))])

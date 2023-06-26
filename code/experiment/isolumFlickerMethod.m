@@ -1,4 +1,4 @@
-function isolumSelectionMri(sub)
+function isolumFlickerMethod(sub)
 % get equiluminant colors using the flicker method
 % The function reads in a table with RGB values of diagnostic colors for a
 % set of stimlui and the corresonding RGB values of the inverted color in
@@ -24,10 +24,10 @@ log = inputSubID(ptb,log);
 
 KbName('UnifyKeyNames');
 % Define response buttons
-terminateButton     = KbName('ESCAPE'); % ESC
-lumIncreaseButton   = KbName('LeftArrow'); % 1
-lumDecreaseButton   = KbName('RightArrow'); % Q
-confirmButton       = KbName('Space'); % Space
+terminateButton     = ptb.Keys.stop; % ESC
+lumIncreaseButton   = ptb.Keys.left; % 1
+lumDecreaseButton   = ptb.Keys.right; % Q
+confirmButton       = ptb.Keys.accept; % Space
 
 monCalDir = fullfile('..', 'monitor_calibration', 'EIZO_CIN5th_Brightness50_SpectraScan670_derived.mat');
 
@@ -79,6 +79,10 @@ rectCoordinates = round([...
 
 lum = 255;
 grey = [ptb.grey ptb.grey ptb.grey];
+
+% align fusion
+design = designSettings(log.language);
+alignFusion(ptb, design);
 
 % Prepare instruction screen
 instructionStr = sprintf(['COLOR ADJUSTMENT\n\n'...
