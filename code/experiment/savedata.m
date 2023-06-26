@@ -19,19 +19,19 @@ function log = savedata(log,ptb,design)
     end
     
     if strcmp(log.end,'Finished with errors')
-        save(fullfile(log.subjectDirectory, [log.sub '_ptb_error']),'ptb');
-        save(fullfile(log.subjectDirectory, [log.sub '_log_error']),'log');
-        save(fullfile(log.subjectDirectory, [log.sub '_design_error']),'design');
+        save(fullfile(log.subjectDirectory, [log.sub sprintf('_run-%02d',log.runNr) '_ptb_error']),'ptb');
+        save(fullfile(log.subjectDirectory, [log.sub sprintf('_run-%02d',log.runNr) '_log_error']),'log');
+        save(fullfile(log.subjectDirectory, [log.sub sprintf('_run-%02d',log.runNr) '_design_error']),'design');
         if design.useET; unixStr=['mv ' log.edfFile ' ' [log.edfFile] '_error.edf'];unix(unixStr);end
     elseif strcmp(log.end,'Escape')
-        save(fullfile(log.subjectDirectory, [log.sub '_ptb_cancelled']),'ptb');
-        save(fullfile(log.subjectDirectory, [log.sub '_log_cancelled']),'log'); fprintf('\n Saved cancelled data.... \n');
-        save(fullfile(log.subjectDirectory, [log.sub '_design_cancelled']),'design');
+        save(fullfile(log.subjectDirectory, [log.sub sprintf('_run-%02d',log.runNr) '_ptb_cancelled']),'ptb');
+        save(fullfile(log.subjectDirectory, [log.sub sprintf('_run-%02d',log.runNr) '_log_cancelled']),'log'); fprintf('\n Saved cancelled data.... \n');
+        save(fullfile(log.subjectDirectory, [log.sub sprintf('_run-%02d',log.runNr) '_design_cancelled']),'design');
         if design.useET; unixStr=['mv ' log.edfFile ' ' [log.edfFile] '_cancelled.edf'];unix(unixStr);end
     elseif strcmp(log.end,'Success')
-        save(fullfile(log.subjectDirectory, [log.sub '_ptb']),'ptb');
-        save(fullfile(log.subjectDirectory, [log.sub '_log']),'log'); fprintf('\n Saved success data.... \n');
-        save(fullfile(log.subjectDirectory, [log.sub '_design']),'design');
+        save(fullfile(log.subjectDirectory, [log.sub sprintf('_run-%02d',log.runNr) '_ptb']),'ptb');
+        save(fullfile(log.subjectDirectory, [log.sub sprintf('_run-%02d',log.runNr) '_log']),'log'); fprintf('\n Saved success data.... \n');
+        save(fullfile(log.subjectDirectory, [log.sub sprintf('_run-%02d',log.runNr) '_design']),'design');
     end 
         
 end

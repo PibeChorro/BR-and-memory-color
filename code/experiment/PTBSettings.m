@@ -1,6 +1,6 @@
 function ptb = PTBSettings()
 % Decide which set up to use
-SetUp = 'CIN-personal';
+ptb.SetUp = 'CIN-personal';
 
 % Turn initial start screen from white to black
 Screen('Preference', 'VisualDebugLevel', 1);
@@ -15,7 +15,7 @@ ptb.seed = rng('shuffle');
 % ListenChar(2);
 
 % Keyboard pre-setup
-KbName('UnifyKeyNames');
+% KbName('UnifyKeyNames'); % not needed if PsychDefaultSetup is called with a feature level >0
 ptb.KeyList1 = zeros (256, 1); % initiate an empty array that later, when keys are defined, is filled with the allowed keys
 ptb.KeyList2 = zeros (256, 1); % initiate an empty array that later, when keys are defined, is filled with the allowed keys
 ptb.usbTrg = 1; % If 1 --> wait for scanner triggers & check USB inputs.
@@ -25,7 +25,7 @@ ptb.Keys.escape = KbName('ESCAPE');     ptb.KeyList1(ptb.Keys.escape)= double(1)
 ptb.Keys.yes    = KbName('y');          ptb.KeyList1(ptb.Keys.yes)   = double(1);
 ptb.Keys.no     = KbName('n');          ptb.KeyList1(ptb.Keys.no)    = double(1);
 ptb.Keys.debug  = 1;
-switch SetUp
+switch ptb.SetUp
     case 'CIN-personal'
         % subject keys
         ptb.Keys.left   = KbName('LeftArrow');  ptb.KeyList2(ptb.Keys.left)  = double(1);
@@ -121,7 +121,7 @@ PsychImaging('PrepareConfiguration');                                   % standa
 % PsychImaging('AddTask', 'General', 'UseVirtualFramebuffer');            % nice to have - not necessary, but suggested
 % PsychImaging('AddTask', 'General', 'UseFineGrainedTiming', 'Auto');     % makes timing even more efficient, but if the hardware does not support it, PsychImaging('OpenWindow') fails
 % PsychImaging('AddTask', 'General', 'UseFastOffscreenWindows');          % accelerates switching between drawing into onscreen and offscreen windows
-switch SetUp
+switch ptb.SetUp
     case 'CIN-personal'
         [ptb.window, ptb.windowRect] = PsychImaging('OpenWindow', ptb.screenNumber, ptb.BackgroundColor, [0 0 1600 1080], [],[],4); 
         % Real world variable

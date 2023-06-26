@@ -19,21 +19,27 @@ catch PTBError
 end
 
 %% design related
-design.stimulusPresentationTime    = 2 - ptb.ifi/2;
-design.ITI                         = 1 - ptb.ifi/2;
-design.stimSizeInDegrees           = 5;
-design.stimSizeInPixels            = round(ptb.PixPerDegWidth*design.stimSizeInDegrees);
-design.grayBackgroundInDegrees     = 6;
-design.checkerBoardInDegrees       = 10;
-design.checkerBoardXFrequency      = 8;     % checkerboard background frequency along X
-design.checkerBoardXFrequency      = 8;     % checkerboard background frequency along Y
+design.stimulusPresentationTime = 2 - ptb.ifi/2;
+design.ITI                      = 1 - ptb.ifi/2;
+design.stimSizeInDegrees        = 5;
+design.stimSizeInPixels         = round(ptb.PixPerDegWidth*design.stimSizeInDegrees);
+design.grayBackgroundInDegrees  = 6;
+design.checkerBoardInDegrees    = 10;
+design.checkerBoardXFrequency   = 8;     % checkerboard background frequency along X
+design.checkerBoardXFrequency   = 8;     % checkerboard background frequency along Y
+design.rotationLowerBound       = 8;
+design.rotationUpperBound       = 12;
+design.rotationDiff             = 20;
 % Use eyetracker?
 design.useET = false;
 
 %% stimuli related
-stimDirectory = fullfile('..', '..', 'stimuli');
-trueColorDirectory = fullfile(stimDirectory, 'true_color');
-invertedColorDirectory = fullfile(stimDirectory, 'inverted');
+originalStimDirectory = fullfile('..', '..', 'stimuli');
+maskDirectory = fullfile(originalStimDirectory, 'color_masks');
+% read in the csv table containing the RGB values of "typical" memory color
+% and inverted memory color
+colorTableDir = fullfile('..','..','stimuli','representative_pixels.csv');
+colorTable = readtable(colorTableDir, 'TextType','string');
 
 % resize stimuli
 % define a rectangle where the stimulus is drawn
@@ -73,10 +79,62 @@ design.penWidth = 10;
 % frog_1    | right     | 12.345        | 17.890        | true_color| 2.22          | 3.1           | 1.9               | 0.5               | 3             |
 % ....
 %
-log.dataDir = fullfile('..', '..', 'rawdata');
-% get randomized stimulus conditions
-[log.data.trueEye, log.data.trueColorRotation, log.data.stimuli]  = createCounterbalancedPseudorandomizedConditions(trueColorDirectory);
 
+dataDir = fullfile('..', '..', 'rawdata');
+subNr = input('Enter subject Nr: ','s');
+correctRunInput = false;
+% check run input
+while ~correctRunInput
+    runNr = input('Enter run  Nr [1-6]:', 's');
+    [runNr,isNumber] = str2num(runNr);
+    if isNumber && runNr>0 && runNr<=6
+        correctRunInput = true;
+    end
+end
+
+sub = strcat('sub-', sprintf('%02s', subNr));
+% read in log mat file
+try
+    load(fullfile(dataDir, sub, [sub '_equilumFlicker_log.mat']))
+catch LOADING_ERROR
+    fprintf('No log file was found. Either you did not perform the flicker method or you typed in the wrong subject Number\n')
+    loadDefault = input('Do you want to load a standard subject Y/N [Y]? ','s');
+    if (strcmp(loadDefault, 'n') || isempty(loadDefault))
+        error('No log was found and you chose not to use a standard subject')
+    else
+        error('Standard subject is not implemented yet')
+    end
+end
+log.runNr = runNr;
+
+% check if there are subject specific stimuli
+trueColorDirectory = fullfile(log.subjectDirectory,'stimuli', 'true_color');
+invertedColorDirectory = fullfile(log.subjectDirectory,'stimuli', 'inverted_color');
+% all the stimuli used
+trueStimuli = dir(fullfile(trueColorDirectory,'*.png'));
+trueStimuliNames = {trueStimuli(:).name};
+invertedStimuli = dir(fullfile(invertedColorDirectory,'*.png'));
+invertedStimuliNames = {invertedStimuli(:).name};
+if length(trueStimuliNames)~=length(invertedStimuliNames)
+    error('The number of stimuli for the true color and inverted color is not the same')
+end
+if isempty(trueStimuliNames) || isempty(invertedStimuliNames)
+    error('No stimuli found in subject specific stimuli folder')
+end
+
+% get randomized stimulus conditions for subject
+if log.runNr == 1
+    createCounterbalancedPseudorandomizedConditions(log);
+end
+% read in csv table with conditions for run
+try
+    conditionsTableDir = fullfile(log.subjectDirectory,[log.sub sprintf('_run-%02d',log.runNr) '.csv']);
+    conditionsTable = readtable(conditionsTableDir,'Delimiter', ',');
+catch READINGERROR
+    error('could not read conditions table')
+end
+log.data.trueEye = conditionsTable.sides;
+log.data.stimuli = conditionsTable.stimuli;
 % get number of trials from the length of stimuli 
 numTrials = length(log.data.trueEye);
 % trueEye is a cell array containing either 'right' or 'left' -> convert
@@ -95,15 +153,15 @@ end
 % rotation is a cell array containing either 'clockwise' or
 % 'counter-clockwise' -> convert into 0 and 1 for easy and fast assignment
 log.data.trueColorRotationDegrees = zeros(numTrials,1);
-for rotation = 1:length(log.data.trueEye)
-    if strcmp(log.data.trueColorRotation{rotation}, 'clockwise')
-        log.data.trueColorRotationDegrees(rotation) = 10;
-    elseif strcmp(log.data.trueColorRotation{rotation}, 'counter-clockwise')
-        log.data.trueColorRotationDegrees(rotation) = -10;
-    else
-        error('Assignment for rotation direction is neither clockwise nor counter-clockwise')
-    end
-end
+% for rotation = 1:length(log.data.trueEye)
+%     if strcmp(log.data.trueColorRotation{rotation}, 'clockwise')
+%         log.data.trueColorRotationDegrees(rotation) = 10;
+%     elseif strcmp(log.data.trueColorRotation{rotation}, 'counter-clockwise')
+%         log.data.trueColorRotationDegrees(rotation) = -10;
+%     else
+%         error('Assignment for rotation direction is neither clockwise nor counter-clockwise')
+%     end
+% end
 
 % preallocate data
 log.data.stimOnset           = zeros(numTrials,1);
@@ -131,7 +189,6 @@ invertedColorBufferId   = 1; % 0=left; 1=right - just for ininitalization
 
 %% Subject input
 try
-    log = inputSubID(ptb, log);
     fprintf (log.sub);
     fprintf ('\n');
     fprintf (log.subjectDirectory);
@@ -139,6 +196,8 @@ try
     
     %% Get design settings
     design = designSettings(log.language,design);
+    % read in the subject specific table with equiluminant color values
+    equilumColorTable = readtable(fullfile(log.subjectDirectory,'equiluminantColorTable.csv'));
     
     %% Inclusion of eye tracker
     if design.useET
@@ -206,26 +265,36 @@ try
     TrialEnd = ExpStart;
     
     % Loop over trials
-    for trial = 1:4 %length(numTrials)
+    for trial = 1:numTrials
+        %% Read in and process images
         trueColorStimPath       = fullfile(trueColorDirectory, log.data.stimuli{trial});
         invertedColorStimPath   = fullfile(invertedColorDirectory, log.data.stimuli{trial});
+        maskStimPath            = fullfile(maskDirectory, log.data.stimuli{trial});
         % imread does not read in the alpha channel by default. We need to
         % get it from the third return value and add to the img
-        [trueColorStimImg, ~, trueAlpha]            = imread(trueColorStimPath);
-        [invertedColorStimImg, ~, invertedAlpha]    = imread(invertedColorStimPath);
-        trueColorStimImg(:,:,4)         = trueAlpha;
-        invertedColorStimImg(:,:,4)     = invertedAlpha;
+        [trueColorStimImg, ~, trueAlpha]            = imread(trueColorStimPath, 'png');
+        [invertedColorStimImg, ~, invertedAlpha]    = imread(invertedColorStimPath, 'png');
+        maskImg = imread(maskStimPath);
+        % get the representative pixel values for the current stimuli
+        % first get the right index
         
+        % add alph channel
+        trueColorStimImg(:,:,4) = trueAlpha;
+        invertedColorStimImg(:,:,4) = invertedAlpha;
+        
+        %% prepare drawing of stimuli
         % Determine on which eye the true color and the inverted color
         % stimulus is presented 
         trueColorBufferId       = sum(log.data.trueEyeBinary(trial));
         invertedColorBufferId   = sum(~log.data.trueEyeBinary(trial));
         
-        % Determine in which direction the true color and the inverted
-        % color stimulus are rotated
-        rotationAngle = log.data.trueColorRotationDegrees;
+        % Determine in which direction and to which degrees the true color 
+        % and the inverted color stimulus are rotated
+        rotationAngleTrueColor = randi([design.rotationLowerBound design.rotationUpperBound])*(randi([0 1])-1/2)*2; % log.data.trueColorRotationDegrees(trial);
+        rotationAngleFalseColor = -(design.rotationDiff-abs(rotationAngleTrueColor))*sign(rotationAngleTrueColor);
 
-        % Select   left-eye image buffer for drawing:
+        %% draw and show stimuli
+        % Select image buffer for true color image:
         Screen('SelectStereoDrawBuffer', ptb.window, trueColorBufferId);
         % BACKGROUND
         Screen('FrameRect', ptb.window ,ptb.black ,design.bigFrame, design.penWidth);   % the big frame
@@ -234,9 +303,9 @@ try
         % FORGROUND
         trueColorTexture = Screen('MakeTexture', ptb.window, trueColorStimImg);         % create texture for stimulus
         Screen('DrawTexture', ptb.window, trueColorTexture, [], ...
-            ptb.destinationRect, rotationAngle);                                        % draw stimulus
+            ptb.destinationRect, rotationAngleTrueColor);                                        % draw stimulus
 
-        % Select right-eye image buffer for drawing:
+        % Select image buffer for inverted color image:
         Screen('SelectStereoDrawBuffer', ptb.window, invertedColorBufferId);
         % BACKGROUND
         Screen('FrameRect', ptb.window ,ptb.black ,design.bigFrame, design.penWidth);   % the big frame
@@ -245,7 +314,7 @@ try
         % FORGROUND
         invertedColorTexture = Screen('MakeTexture', ptb.window, invertedColorStimImg);     % create texture for stimulus
         Screen('DrawTexture', ptb.window, invertedColorTexture, [], ...
-            ptb.destinationRect, -rotationAngle);                                       % draw stimulus
+            ptb.destinationRect, rotationAngleFalseColor);                                  % draw stimulus
 
         % Tell PTB drawing is finished for this frame:
         Screen('DrawingFinished', ptb.window);
@@ -256,9 +325,10 @@ try
         vblOffset   = Screen('Flip', ptb.window, vblOnset+design.stimulusPresentationTime);
         TrialEnd    = vblOffset;
 
-        % save timing of stimuli
+        %% save timing of stimuli
         log.data.stimOnset(trial)     = vblOnset-ExpStart;
         log.data.stimOffset(trial)    = vblOffset-ExpStart;
+        log.data.trueColorRotationDegrees(trial) = rotationAngleTrueColor;
         %... Check if Experimentors pressed escape ...%
         % DOES NOT WORK!!!
         [pressed, firstPress] = KbQueueCheck(ptb.Keyboard1);

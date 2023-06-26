@@ -1,5 +1,9 @@
 function [design] = designSettings(language,design)
 
+if nargin < 2
+    design = struct;
+end
+
 if strcmp (language, 'german')
     design.Introduction = ['Vielen Dank dass du an unserer Studie teilnimmst\n\n'...
         'Drücke eine beliebigen Knopf um fortzufahren'];
