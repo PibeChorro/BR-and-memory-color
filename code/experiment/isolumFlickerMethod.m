@@ -1,4 +1,4 @@
-function isolumFlickerMethod(sub)
+function isolumFlickerMethod()
 % get equiluminant colors using the flicker method
 % The function reads in a table with RGB values of diagnostic colors for a
 % set of stimlui and the corresonding RGB values of the inverted color in
@@ -8,12 +8,6 @@ function isolumFlickerMethod(sub)
 % equiluminant
 % The resulting table is then saved in the subject directory
 
-if nargin < 1
-    sub = 'sub-test';
-end
-if isnumeric(sub)
-    sub = sprintf('sub-%02d',sub);
-end
 % get all the important setting information
 PsychDefaultSetup(2);
 ptb = PTBSettings();
@@ -24,20 +18,17 @@ log = inputSubID(ptb,log);
 
 KbName('UnifyKeyNames');
 % Define response buttons
-terminateButton     = ptb.Keys.stop; % ESC
-lumIncreaseButton   = ptb.Keys.left; % 1
-lumDecreaseButton   = ptb.Keys.right; % Q
+terminateButton     = ptb.Keys.escape;
+lumIncreaseButton   = ptb.Keys.left;
+lumDecreaseButton   = ptb.Keys.right; 
 confirmButton       = ptb.Keys.accept; % Space
-
-monCalDir = fullfile('..', 'monitor_calibration', 'EIZO_CIN5th_Brightness50_SpectraScan670_derived.mat');
 
 % read in setup specific gamma correction table
 switch ptb.SetUp
     case 'CIN-personal'
-        load(monCalDir);
-        LUT = round(cal.iGammaTable*255);
-%         LUT = readmatrix('gammaLUT.txt'); % lookup table to make monitor linear
+        LUT = readmatrix('gammaLUT.txt'); % lookup table to make monitor linear
     case 'CIN-experimentroom'
+        monCalDir = fullfile('..', 'monitor_calibration', 'EIZO_CIN5th_Brightness50_SpectraScan670_derived.mat');
         load(monCalDir);
         LUT = round(cal.iGammaTable*255);
 %         LUT = textread('spc_mrz3t_gammaLUT.txt'); % img_gammaLUT(gamma_mon,1); % lookup table to make monitor linear
@@ -47,54 +38,97 @@ switch ptb.SetUp
         error('No valid setup choise')
 end
 
-% Read in table with typical RGB values for each stimulus
-colorTableDir = fullfile('..','..','stimuli','representative_pixels.csv');
-colorTable = readtable(colorTableDir, 'TextType','string');
-numColors = size(colorTable,1);
-% shuffle table 
-randSeq = randperm(numColors);
-colorTable = colorTable(randSeq,:);
 
-% create copy of color table to store the adjusted RGB - values in
-equilumColorTable = colorTable;
+%% get all stimuli 
+stimDir = fullfile('..', '..', 'stimuli');
+trueColorStimulDir = fullfile(stimDir,'true_color');
+invertedColorStimDir = fullfile(stimDir,'inverted_lab');
+maskDir = fullfile(stimDir,'color_masks');
+stimulusSelection = {
+    'blue_nivea.png' ...
+    'blue_pool.png' ...
+    'blue_sign.png' ...
+    'green_brokkoli_1.png' ...
+    'green_frog_1.png' ... 
+    'green_lettuce_1.png' ...
+    'orange_basketball.png' ...
+    'orange_carrots.png' ... 
+    'orange_pumpkin.png' ...
+    'red_fire_extinguisher_1.png' ...
+    'red_strawberry.png' ...
+    'red_tomato.png' ...
+    'yellow_banana.png' ...
+    'yellow_chicken.png' ...
+    'yellow_corn.png'
+};
+% shuffle stimuli order
+stimulusSelection = Shuffle(stimulusSelection);
+numStimuli = length(stimulusSelection);
 
-% create subject directory to store the resulting table in
-outputDir = fullfile(log.subjectDirectory,'equiluminantColorTable.csv');
-if (~isfolder(log.subjectDirectory))
-    mkdir(log.subjectDirectory);
+% get maximum number of pixels within mask
+maxPixel = 1;
+for i = 1:numStimuli
+    % read in stimulus mask
+    curMask = imread(fullfile(maskDir,stimulusSelection{i}));
+    curPixels = sum(sum(curMask(:,:,1)>0));
+    if curPixels>maxPixel
+        maxPixel = curPixels;
+    end
 end
+
+% get square root of maximal pixels to create a square with scrambled
+% pixels
+colorPatchSize = ceil(sqrt(maxPixel));
+% get number of pixels in color patch
+numPixels = colorPatchSize*colorPatchSize;
+
+% create subject stimuli directories to store the resulting stimuli in
+correctedTrueStimDir = fullfile(log.subjectDirectory,'stimuli','true_color');
+if (~isfolder(correctedTrueStimDir))
+    mkdir(correctedTrueStimDir);
+end
+correctedFalseStimDir = fullfile(log.subjectDirectory,'stimuli','inverted_lab');
+if (~isfolder(correctedFalseStimDir))
+    mkdir(correctedFalseStimDir);
+end
+
 
 % stepsize with which the luminance should be increased/decreased
 stepSize = 1/255;
 
-xSize = ptb.screenXpixels;
-ySize = ptb.screenYpixels;
-
-% rectangle where color is shown
-rectCoordinates = round([...
-    ptb.xCenter-.15*xSize ...
-    ptb.yCenter-.15*ySize ...
-    ptb.xCenter+.15*xSize ...
-    ptb.yCenter+.15*ySize]);
-
 lum = 255;
-grey = [ptb.grey ptb.grey ptb.grey];
 
 % align fusion
 design = designSettings(log.language);
 alignFusion(ptb, design);
 
 % Prepare instruction screen
-instructionStr = sprintf(['COLOR ADJUSTMENT\n\n'...
-    'In the following task you will be shown a series of flickering color patches.\n'...
-    'The goal of this task is to change the luminance of each patch such that the\n'...
-    'flickering is minimized.\n\n'...
-    'You are going to increase or decrease the luminance of the patch using the two\n'...
-    '''increase/decrease'' buttons. You can make adjustments for as long as you want.\n'...
-    'If you think that minimal flickering has been achieved, press the ''accept'' button\n'...
-    'This task is repeated for eight different color patches.\n\n'...
-    '(PRESS ANY KEY TO PROCEED)']);
-
+if strcmp(log.language,'german')
+    instructionStr = sprintf(['HELLIGKEITS ANPASSUNG\n\n' ...
+        'Im Folgenden wirst du eine Reihe\n' ...
+        'farbiger, flackernder Rechtecke sehen,\n' ...
+        'Deine Aufgabe ist es, \n' ...
+        'mit den Tasten "4" und "6" die Helligkeit so zu ändern,\n'...
+        'dass die Rechtecke so wenig\n ' ...
+        'flackern wie möglich.' ...
+        'Wenn du glaubst das Flackern\n' ...
+        'minimiert zu haben, drücke die "5" Taste.\n\n' ...
+        'Diese Aufgabe wird 15 Mal wiederholt und dauert ca. 5 Minuten.\n\n' ...
+        'DRÜCKE DIE "5" UM ZU STARTEN']);
+else
+    instructionStr = sprintf(['LUMINANCE ADJUSTMENT\n\n'...
+        'In the following task\n' ...
+        'you will be shown a series of \n' ...
+        'colored flickering color patches.\n'...
+        'The goal of this task is to change \n' ...
+        'the luminance of each patch such that the\n'...
+        'flickering is minimized\n' ... 
+        'using the "4" and "6" button.\n\n'...
+        'If you think that minimal flickering\n' ... 
+        'has been achieved, press the "5" button\n'...
+        'This task is repeated 15 times and takes about 5 minutes.\n\n'...
+        'PRESS THE "5" KEY TO PROCEED']);
+end
 
 % Select   left-eye image buffer for drawing:
 Screen('SelectStereoDrawBuffer', ptb.window, 0);
@@ -113,34 +147,55 @@ while KbCheck;end
 
 % Do initial flip and show instructions    
 Screen('Flip', ptb.window);
-while 1
-    [ ~, ~, keyCode ] = KbCheck;
-    if ismember(find(keyCode), [lumIncreaseButton lumDecreaseButton terminateButton])
-        break;
-    end
-end
 
-% Output will be stored in this matrix (Columns 1-3 correspond to R, G, & B)
-xyYIsolum = zeros(size(colorTable,1));
+KbWait();
+WaitSecs(0.5);
 
+% Flush Keyevents in order to avoid that a buttonpress is already
+% interpreted as a reaction to the task
+KbEventFlush()
 % Iterate over all colors that need to be adjusted
-for curCol = 1:numColors
-    % Get current true color values
-    curTrueR = colorTable.true_R(curCol);
-    curTrueG = colorTable.true_G(curCol);
-    curTrueB = colorTable.true_B(curCol);
-    curTrueColor = [curTrueR curTrueG curTrueB];
+for curStim = 1:numStimuli
+    trueOutputDir = fullfile(correctedTrueStimDir,stimulusSelection{curStim});
+    invOutputDir = fullfile(correctedFalseStimDir,stimulusSelection{curStim});
     
-    % Get current inverted color values
-    curFalseR = colorTable.inv_R(curCol);
-    curFalseG = colorTable.inv_G(curCol);
-    curFalseB = colorTable.inv_B(curCol);
-    curFalseColor = [curFalseR curFalseG curFalseB];
+    %% read in stimuli
+    % true color
+    [trueColorStim, ~, trueAlpha] = imread(fullfile(trueColorStimulDir,stimulusSelection{curStim}));
+    % inverted color
+    [invertedColorStim, ~, invAlpha] = imread(fullfile(invertedColorStimDir,stimulusSelection{curStim}));
+    % mask
+    curMask = imread(fullfile(maskDir,stimulusSelection{curStim}));
+    % get pixels within mask
+    objectPixels = curMask(:,:,1)>0;
+    indices = find(objectPixels);
 
-    curTrueLumFactor = 1; 
-    curFalseLumFactor = 1;
-    maxCurTrueLumFactor = 255/max(curTrueColor);
-    maxCurFalseLumFactor = 255/max(curFalseColor);
+    curPixels = sum(sum(objectPixels));
+    numGreyPixels = numPixels - curPixels;
+
+    trueR = trueColorStim(:,:,1);
+    trueG = trueColorStim(:,:,2);
+    trueB = trueColorStim(:,:,3);
+    truePixels = zeros(length(trueColorStim(objectPixels)),3);
+    truePixels(:,1) = trueR(objectPixels);
+    truePixels(:,2) = trueG(objectPixels);
+    truePixels(:,3) = trueB(objectPixels);
+
+    invR = invertedColorStim(:,:,1);
+    invG = invertedColorStim(:,:,2);
+    invB = invertedColorStim(:,:,3);
+    invPixels = zeros(length(invertedColorStim(objectPixels)),3);
+    invPixels(:,1) = invR(objectPixels);
+    invPixels(:,2) = invG(objectPixels);
+    invPixels(:,3) = invB(objectPixels);
+
+    % store original pixel location
+
+    % get number of pixels we need to fill with gray pixels
+    curTrueLumFactor = [1 1 1]; 
+    curFalseLumFactor = [1 1 1];
+    maxCurTrueLumFactor = 255./max(truePixels);
+    maxCurFalseLumFactor = 255./max(invPixels);
     
     curFrame = 1;
     spaceDown = 0;  % Has P pressed the space bar?
@@ -149,22 +204,38 @@ for curCol = 1:numColors
     while ~spaceDown
         if curFrame > 1
             % Set the gamma corrected color values
-            correctedTrueColor = img_gammaConvert(LUT,round(curTrueColor*curTrueLumFactor)/lum);
-            correctedFalseColor = img_gammaConvert(LUT,round(curFalseColor*curFalseLumFactor)/lum);
+            correctedTrueColor = img_gammaConvert(LUT,round(truePixels.*curTrueLumFactor)/lum);
+            correctedFalseColor = img_gammaConvert(LUT,round(invPixels.*curFalseLumFactor)/lum);
+
+            truePlusGreyPixels = correctedTrueColor;
+            invPlusGreyPixels = correctedFalseColor;
+
+            % add grey pixels to make it a square
+            truePlusGreyPixels(end:end+numGreyPixels,:) = ptb.grey;
+            invPlusGreyPixels(end:end+numGreyPixels,:) = ptb.grey;
+
+            % reshape into a square
+            trueColorPatch = reshape(truePlusGreyPixels,[colorPatchSize colorPatchSize 3]);
+            invColorPatch = reshape(invPlusGreyPixels,[colorPatchSize colorPatchSize 3]);
+
             % Select   left-eye image buffer for drawing:
             Screen('SelectStereoDrawBuffer', ptb.window, 0);
             if mod(curFrame,2) == 1 % Inversed color
-                Screen('FillRect',ptb.window, correctedFalseColor, rectCoordinates);
+                invertedColorTexture = Screen('MakeTexture', ptb.window, invColorPatch);     % create texture for stimulus
+                Screen('DrawTexture', ptb.window, invertedColorTexture)
             elseif mod(curFrame,2) == 0 % True color
-                Screen('FillRect',ptb.window, correctedTrueColor, rectCoordinates);
+                trueColorTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
+                Screen('DrawTexture', ptb.window, trueColorTexture)
             end
 
             % Select   right-eye image buffer for drawing:
             Screen('SelectStereoDrawBuffer', ptb.window, 1);
             if mod(curFrame,2) == 1 % Inversed color
-                Screen('FillRect',ptb.window, correctedFalseColor, rectCoordinates);
+                invertedColorTexture = Screen('MakeTexture', ptb.window, invColorPatch);     % create texture for stimulus
+                Screen('DrawTexture', ptb.window, invertedColorTexture)
             elseif mod(curFrame,2) == 0 % True color
-                Screen('FillRect',ptb.window, correctedTrueColor, rectCoordinates);
+                trueColorTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
+                Screen('DrawTexture', ptb.window, trueColorTexture)
             end
 
             Screen('DrawingFinished', ptb.window); % Tell PTB that no further drawing commands will follow before Screen('Flip')
@@ -189,37 +260,43 @@ for curCol = 1:numColors
                     curFalseLumFactor = curFalseLumFactor+stepSize;
 
                 case confirmButton
-                    % Save current settings
-                    xyYIsolum(curCol, 1:3) = XYZToxyY(SRGBPrimaryToXYZ(curTrueColor'*curTrueLumFactor))';
-                    disp('--------------------------------------------------------------');
-%                     fprintf('Adjustment made for stimulus %i:\nx\ty\tY\t\tR\tG\tB\n%.2f\t%.2f\t%.2f\t\t%.2f\t%.2f\t%.2f\n', ...
-%                         curCol, xyYIsolum(curCol,1), xyYIsolum(curCol,2), xyYIsolum(curCol,3), ...
-%                         trueRgbIsolum(curCol,1), trueRgbIsolum(curCol,2), trueRgbIsolum(curCol,3));
-                    % save new color values in table
-                    equilumColorTable.true_R(curCol) = correctedTrueColor(1);
-                    equilumColorTable.true_G(curCol) = correctedTrueColor(2);
-                    equilumColorTable.true_B(curCol) = correctedTrueColor(3);
+                    fprintf('Accepted\n')
+                    trueR(indices) = uint8(round(correctedTrueColor(:,1)*255));
+                    trueG(indices) = uint8(round(correctedTrueColor(:,2)*255));
+                    trueB(indices) = uint8(round(correctedTrueColor(:,3)*255));
 
-                    equilumColorTable.inv_R(curCol) = correctedFalseColor(1);
-                    equilumColorTable.inv_G(curCol) = correctedFalseColor(2);
-                    equilumColorTable.inv_B(curCol) = correctedFalseColor(3);
+                    trueColorStim(:,:,1) = trueR;
+                    trueColorStim(:,:,2) = trueG;
+                    trueColorStim(:,:,3) = trueB;
+
+                    imwrite(trueColorStim,trueOutputDir,'png','Alpha', trueAlpha);
+
+                    invR(indices) = uint8(round(correctedFalseColor(:,1)*255));
+                    invG(indices) = uint8(round(correctedFalseColor(:,2)*255));
+                    invB(indices) = uint8(round(correctedFalseColor(:,3)*255));
+
+                    invertedColorStim(:,:,1) = invR;
+                    invertedColorStim(:,:,2) = invG;
+                    invertedColorStim(:,:,3) = invB;
+
+                    imwrite(invertedColorStim, invOutputDir, 'png','Alpha', invAlpha);
 
                     while KbCheck; end % Wait until all keys have been released
                     spaceDown = 1;    % P confirmed adjustment
             end % switch
 
             % Make sure the luminance factor does not exceed boundaries
-            if curTrueLumFactor > maxCurTrueLumFactor 
-                curTrueLumFactor = maxCurTrueLumFactor; 
+            if any(curTrueLumFactor > maxCurTrueLumFactor)
+                curTrueLumFactor(curTrueLumFactor > maxCurTrueLumFactor) = maxCurTrueLumFactor(curTrueLumFactor > maxCurTrueLumFactor); 
             end
-            if  curFalseLumFactor > maxCurFalseLumFactor 
-                curFalseLumFactor = maxCurFalseLumFactor; 
+            if  any(curFalseLumFactor > maxCurFalseLumFactor) 
+                curFalseLumFactor(curFalseLumFactor > maxCurFalseLumFactor) = maxCurFalseLumFactor(curFalseLumFactor > maxCurFalseLumFactor); 
             end
-            if curTrueLumFactor <= 0
-                curFalseLumFactor = 0;
+            if any(curTrueLumFactor <= 0)
+                curFalseLumFactor(curTrueLumFactor <= 0) = 0;
             end
-            if curFalseLumFactor <= 0
-                curFalseLumFactor = 0;
+            if any(curFalseLumFactor <= 0)
+                curFalseLumFactor(curFalseLumFactor <= 0) = 0;
             end
         elseif keyIsDown == 0
             responseKeyReleased = 1;
@@ -230,164 +307,3 @@ for curCol = 1:numColors
 end % for curCol = 1:numel(allProtos)
 disp('--------------------------------------------------------------');
 
-% Undo randomization for color tables
-colorTable(randSeq,:) = colorTable;
-equilumColorTable(randSeq,:) = equilumColorTable;
-
-%% save results
-% save equiluminant color table
-writetable(equilumColorTable, outputDir)
-log.equiluminanceTable = equilumColorTable;
-save(fullfile(log.subjectDirectory, [log.sub '_equilumFlicker_log']),'log');
-
-xyYIsolum(randSeq,:) = xyYIsolum;
-
-%% show results
-Priority(0);
-ShowCursor
-% Enable keyboard output to Matlab
-ListenChar(0);
-Screen('CloseAll');
-
-% Show resulting colors
-img = zeros(700, 1000, 3);
-
-% Gray background
-gray = img_gammaConvert(LUT,round(lum*grey));
-img(:,:,1) = gray(1)/255;
-img(:,:,2) = gray(2)/255;
-img(:,:,3) = gray(3)/255;
-
-blueIdx     = find(colorTable.stimuli=='blue_nivea.png');
-redIdx      = find(colorTable.stimuli=='red_tomato.png');
-rangeIdx    = find(colorTable.stimuli=='orange_pumpkin.png');
-yellowIdx   = find(colorTable.stimuli=='yellow_banana.png');
-greenIdx    = find(colorTable.stimuli=='green_brokkoli_1.png');
-
-% Add colors
-img(101:300, 101:300, 1) = colorTable.true_R(blueIdx)/lum;
-img(101:300, 101:300, 2) = colorTable.true_G(blueIdx)/lum;
-img(101:300, 101:300, 3) = colorTable.true_B(blueIdx)/lum;
-
-img(101:300, 401:600, 1) = colorTable.true_R(redIdx)/lum;
-img(101:300, 401:600, 2) = colorTable.true_G(redIdx)/lum;
-img(101:300, 401:600, 3) = colorTable.true_B(redIdx)/lum;
-
-img(401:600, 101:300, 1) = colorTable.true_R(rangeIdx)/lum;
-img(401:600, 101:300, 2) = colorTable.true_G(rangeIdx)/lum;
-img(401:600, 101:300, 3) = colorTable.true_B(rangeIdx)/lum;
-
-img(401:600, 401:600, 1) = colorTable.true_R(yellowIdx)/lum;
-img(401:600, 401:600, 2) = colorTable.true_G(yellowIdx)/lum;
-img(401:600, 401:600, 3) = colorTable.true_B(yellowIdx)/lum;
-
-img(251:550, 701:900, 1) = colorTable.true_R(greenIdx)/lum;
-img(251:550, 701:900, 2) = colorTable.true_G(greenIdx)/lum;
-img(251:550, 701:900, 3) = colorTable.true_B(greenIdx)/lum;
-
-% Show colors
-figure;
-subplot(1,2,1);
-imshow(img);
-
-% Gray background
-gray = img_gammaConvert(LUT,round(lum*grey));
-img(:,:,1) = gray(1)/255;
-img(:,:,2) = gray(2)/255;
-img(:,:,3) = gray(3)/255;
-
-blueIdx     = find(colorTable.stimuli=='blue_nivea.png');
-redIdx      = find(colorTable.stimuli=='red_tomato.png');
-rangeIdx   = find(colorTable.stimuli=='orange_pumpkin.png');
-yellowIdx   = find(colorTable.stimuli=='yellow_banana.png');
-greenIdx    = find(colorTable.stimuli=='green_brokkoli_1.png');
-
-% Add colors
-img(101:300, 101:300, 1) = colorTable.inv_R(blueIdx)/lum;
-img(101:300, 101:300, 2) = colorTable.inv_G(blueIdx)/lum;
-img(101:300, 101:300, 3) = colorTable.inv_B(blueIdx)/lum;
-
-img(101:300, 401:600, 1) = colorTable.inv_R(redIdx)/lum;
-img(101:300, 401:600, 2) = colorTable.inv_G(redIdx)/lum;
-img(101:300, 401:600, 3) = colorTable.inv_B(redIdx)/lum;
-
-img(401:600, 101:300, 1) = colorTable.inv_R(rangeIdx)/lum;
-img(401:600, 101:300, 2) = colorTable.inv_G(rangeIdx)/lum;
-img(401:600, 101:300, 3) = colorTable.inv_B(rangeIdx)/lum;
-
-img(401:600, 401:600, 1) = colorTable.inv_R(yellowIdx)/lum;
-img(401:600, 401:600, 2) = colorTable.inv_G(yellowIdx)/lum;
-img(401:600, 401:600, 3) = colorTable.inv_B(yellowIdx)/lum;
-
-img(251:550, 701:900, 1) = colorTable.inv_R(greenIdx)/lum;
-img(251:550, 701:900, 2) = colorTable.inv_G(greenIdx)/lum;
-img(251:550, 701:900, 3) = colorTable.inv_B(greenIdx)/lum;
-
-
-subplot(1,2,2);
-imshow(img);
-
-writeShaderFiles = input('Do you want to create the shader files? (0 = false; 1 = true) :');
-if writeShaderFiles == 1
-%     mkdir('output')
-    % Write shader code to file
-    for curCol = 1:numel(allColors)
-        colorStr = isolum.names{curCol}(1:end-3);
-        lumStr = isolum.names{curCol}(end-2:end);
-        
-        rgbBkgrd = img_gammaConvert(LUT, .5*ones(1,3));
-
-%         if strcmp(lumStr, 'Brt')
-%             rgbBkgrd = img_gammaConvert(LUT, matchBrt.bkgrd);
-%         elseif strcmp(lumStr, 'Dim')
-%             rgbBkgrd = img_gammaConvert(LUT, matchDim.bkgrd);
-%         end
-        
-        subfolder = [colorStr 'Rings' lumStr '/'];
-%         mkdir(['output/' subfolder]);
-
-        for curMotDirection = 1:2
-            if curMotDirection == 1
-                directionStr = 'In';
-                shaderAddOrSubtract = '-';
-            else
-                directionStr = 'Out';
-                shaderAddOrSubtract = '+';
-            end
-            fid = fopen(['../stimuli/equalizedStimuli/' subfolder colorStr 'Rings' lumStr directionStr '.frag.txt'],'w');
-            fprintf(fid, ['/* THIS CODE WAS GENERATED AUTOMATICALLY BY FUNCTION isolumSelectionMri.m */\n\n'...
-                'uniform vec2 location;\n'...
-                'uniform float shaderParam;\n\n'...
-                '/*Color definitions*/'...                
-                'const vec4 firstColor= vec4(%.2f, %.2f, %.2f, 1.0);\n'...
-                'const vec4 secondColor = vec4(%.2f, %.2f, %.2f, 1.0);\n\n'...
-                '/*Stimulus size definition\n'...
-                'Actual screen resolution currently is %i by %i\n'...
-                'Cycles per degree (assuming a resolution of 800 by 600): 0.5 (eg., Brouwer & Heeger)\n'... 
-                'Screen size in visual degrees at 3T MRZ is: 21.54? by 15.96?*/\n'... 
-                'const float cycleSizePix = 74.2804;\n'...
-                '/*Circle radius in visual degrees (assuming a resolution of 800 by 600): 7.189*/\n'...
-                'const float radiusPix = 267.0;\n'...
-                'const float twopi = 2.0 * 3.141592654;\n\n'...
-                'void main()\n'...
-                '{\n'...
-                '\t/* Query current output texel position: */\n'...
-                '\tvec2 pos = gl_TexCoord[0].xy;\n\n'...
-                '\t/* Compute euclidean distance to center of our ring stim: */\n'...
-                '\tfloat d = distance(pos, location);\n\n'...
-                '\t/* If distance greater than maximum radius, discard this pixel: */\n'...
-                '\tif (d > radiusPix) discard;\n\n'...
-                '\t/* Convert distance from units of pixels into units of ringwidths, apply shift offset: */\n'...
-                '\t/* pi doesn''t seem to be available as a constant in GLSL - I therefore used 2.0 * asin(1.0) instead */\n'...
-                '\td = (1.0 + sin((d ' shaderAddOrSubtract ' shaderParam) / cycleSizePix * twopi)) * 0.5;\n\n'...
-                '\t/* A pixel in an even-numbered ring is drawn in gl_Color, the color assigned in the\n'...
-                '\tScreen(''DrawTexture'') command as modulateColor, whereas a pixel in an odd-numbered\n'...
-                '\tring is assigned ''secondColor'': */\n'...
-                '\tgl_FragColor = mix(firstColor, secondColor, d);\n'...
-                '}'], trueRgbIsolumGamCor(curCol,1), trueRgbIsolumGamCor(curCol,2), trueRgbIsolumGamCor(curCol,3), ...
-                rgbBkgrd(1), rgbBkgrd(2), rgbBkgrd(3), xSize, ySize);
-            fclose(fid);
-        end        
-    end
-    save('../stimuli/equalizedStimuli/isolum.mat','isolum');
-end
