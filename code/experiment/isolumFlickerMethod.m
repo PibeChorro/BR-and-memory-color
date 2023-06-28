@@ -205,8 +205,8 @@ for curStim = 1:numStimuli
     while ~spaceDown
         if curFrame > 1
             % Set the gamma corrected color values
-            correctedTrueColor = img_gammaConvert(LUT,round(truePixels.*curTrueLumFactor)/lum);
-            correctedFalseColor = img_gammaConvert(LUT,round(invPixels.*curFalseLumFactor)/lum);
+            correctedTrueColor = truePixels;% img_gammaConvert(LUT,round(truePixels.*curTrueLumFactor)/lum);
+            correctedFalseColor = invPixels;% img_gammaConvert(LUT,round(invPixels.*curFalseLumFactor)/lum);
             fprintf('Gamma correction\n');
             toc
             truePlusGreyPixels = correctedTrueColor;
@@ -225,11 +225,13 @@ for curStim = 1:numStimuli
             % Select   left-eye image buffer for drawing:
             Screen('SelectStereoDrawBuffer', ptb.window, 0);
             if mod(curFrame,2) == 1 % Inversed color
-                leftStimTexture = Screen('MakeTexture', ptb.window, invColorPatch);     % create texture for stimulus
-                Screen('DrawTexture', ptb.window, leftStimTexture)
+%                 leftStimTexture = Screen('MakeTexture', ptb.window, invColorPatch);     % create texture for stimulus
+%                 Screen('DrawTexture', ptb.window, leftStimTexture)
+                Screen('FillRect',ptb.window,truePixels(1,:));
             elseif mod(curFrame,2) == 0 % True color
-                leftStimTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
-                Screen('DrawTexture', ptb.window, leftStimTexture)
+%                 leftStimTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
+%                 Screen('DrawTexture', ptb.window, leftStimTexture)
+                Screen('FillRect',ptb.window,invPixels(1,:));
             end
             fprintf('Draw to buffer 0\n');
             toc
@@ -237,19 +239,21 @@ for curStim = 1:numStimuli
             % Select   right-eye image buffer for drawing:
             Screen('SelectStereoDrawBuffer', ptb.window, 1);
             if mod(curFrame,2) == 1 % Inversed color
-                rightStimTexture = Screen('MakeTexture', ptb.window, invColorPatch);     % create texture for stimulus
-                Screen('DrawTexture', ptb.window, rightStimTexture)
+%                 rightStimTexture = Screen('MakeTexture', ptb.window, invColorPatch);     % create texture for stimulus
+%                 Screen('DrawTexture', ptb.window, rightStimTexture)
+                Screen('FillRect',ptb.window,truePixels(1,:));
             elseif mod(curFrame,2) == 0 % True color
-                rightStimTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
-                Screen('DrawTexture', ptb.window, rightStimTexture)
+%                 rightStimTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
+%                 Screen('DrawTexture', ptb.window, rightStimTexture)
+                Screen('FillRect',ptb.window,invPixels(1,:));
             end
             fprintf('Draw to buffer 1\n');
             toc
 
             Screen('DrawingFinished', ptb.window); % Tell PTB that no further drawing commands will follow before Screen('Flip')
             % close stimulus texture
-            Screen('Close', rightStimTexture);
-            Screen('Close', leftStimTexture);
+%             Screen('Close', rightStimTexture);
+%             Screen('Close', leftStimTexture);
             fprintf('Closing textures\n');
             toc
         end
