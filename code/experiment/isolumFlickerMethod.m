@@ -146,7 +146,7 @@ while KbCheck;end
 % ListenChar(2);
 
 % Do initial flip and show instructions    
-Screen('Flip', ptb.window);
+vbl = Screen('Flip', ptb.window);
 
 KbWait();
 WaitSecs(0.5);
@@ -200,13 +200,15 @@ for curStim = 1:numStimuli
     curFrame = 1;
     spaceDown = 0;  % Has P pressed the space bar?
     responseKeyReleased = 1;    % Has P released response key?
+    tic
     % Color adjustment
     while ~spaceDown
         if curFrame > 1
             % Set the gamma corrected color values
             correctedTrueColor = img_gammaConvert(LUT,round(truePixels.*curTrueLumFactor)/lum);
             correctedFalseColor = img_gammaConvert(LUT,round(invPixels.*curFalseLumFactor)/lum);
-
+            fprintf('Gamma correction\n');
+            toc
             truePlusGreyPixels = correctedTrueColor;
             invPlusGreyPixels = correctedFalseColor;
 
@@ -217,28 +219,39 @@ for curStim = 1:numStimuli
             % reshape into a square
             trueColorPatch = reshape(truePlusGreyPixels,[colorPatchSize colorPatchSize 3]);
             invColorPatch = reshape(invPlusGreyPixels,[colorPatchSize colorPatchSize 3]);
+            fprintf('Creation of colorpatch\n');
+            toc
 
             % Select   left-eye image buffer for drawing:
             Screen('SelectStereoDrawBuffer', ptb.window, 0);
             if mod(curFrame,2) == 1 % Inversed color
-                invertedColorTexture = Screen('MakeTexture', ptb.window, invColorPatch);     % create texture for stimulus
-                Screen('DrawTexture', ptb.window, invertedColorTexture)
+                leftStimTexture = Screen('MakeTexture', ptb.window, invColorPatch);     % create texture for stimulus
+                Screen('DrawTexture', ptb.window, leftStimTexture)
             elseif mod(curFrame,2) == 0 % True color
-                trueColorTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
-                Screen('DrawTexture', ptb.window, trueColorTexture)
+                leftStimTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
+                Screen('DrawTexture', ptb.window, leftStimTexture)
             end
+            fprintf('Draw to buffer 0\n');
+            toc
 
             % Select   right-eye image buffer for drawing:
             Screen('SelectStereoDrawBuffer', ptb.window, 1);
             if mod(curFrame,2) == 1 % Inversed color
-                invertedColorTexture = Screen('MakeTexture', ptb.window, invColorPatch);     % create texture for stimulus
-                Screen('DrawTexture', ptb.window, invertedColorTexture)
+                rightStimTexture = Screen('MakeTexture', ptb.window, invColorPatch);     % create texture for stimulus
+                Screen('DrawTexture', ptb.window, rightStimTexture)
             elseif mod(curFrame,2) == 0 % True color
-                trueColorTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
-                Screen('DrawTexture', ptb.window, trueColorTexture)
+                rightStimTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
+                Screen('DrawTexture', ptb.window, rightStimTexture)
             end
+            fprintf('Draw to buffer 1\n');
+            toc
 
             Screen('DrawingFinished', ptb.window); % Tell PTB that no further drawing commands will follow before Screen('Flip')
+            % close stimulus texture
+            Screen('Close', rightStimTexture);
+            Screen('Close', leftStimTexture);
+            fprintf('Closing textures\n');
+            toc
         end
     
         % Record and process responses
@@ -302,7 +315,9 @@ for curStim = 1:numStimuli
             responseKeyReleased = 1;
         end % if keyIsDown
         curFrame = curFrame + 1;
-        Screen('Flip',ptb.window);
+        toc
+        vbl = Screen('Flip',ptb.window,vbl+ptb.ifi/2);
+        tic
     end % while 1
 end % for curCol = 1:numel(allProtos)
 disp('--------------------------------------------------------------');
