@@ -215,6 +215,7 @@ for curStim = 1:numStimuli
             % add grey pixels to make it a square
             truePlusGreyPixels(end:end+numGreyPixels,:) = ptb.grey;
             invPlusGreyPixels(end:end+numGreyPixels,:) = ptb.grey;
+            fprintf('bla Hardik sucks balls\n');
 
             % reshape into a square
             trueColorPatch = reshape(truePlusGreyPixels,[colorPatchSize colorPatchSize 3]);
