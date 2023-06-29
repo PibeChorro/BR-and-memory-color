@@ -66,7 +66,7 @@ stimulusSelection = Shuffle(stimulusSelection);
 numStimuli = length(stimulusSelection);
 
 % get maximum number of pixels within mask
-maxPixel = 1;
+maxPixel = 0;
 for i = 1:numStimuli
     % read in stimulus mask
     curMask = imread(fullfile(maskDir,stimulusSelection{i}));
@@ -154,6 +154,9 @@ WaitSecs(0.5);
 % Flush Keyevents in order to avoid that a buttonpress is already
 % interpreted as a reaction to the task
 KbEventFlush()
+
+trueColorPatch = zeros(colorPatchSize,colorPatchSize,3);
+invColorPatch = zeros(colorPatchSize,colorPatchSize,3);
 % Iterate over all colors that need to be adjusted
 for curStim = 1:numStimuli
     trueOutputDir = fullfile(correctedTrueStimDir,stimulusSelection{curStim});
@@ -171,7 +174,13 @@ for curStim = 1:numStimuli
     indices = find(objectPixels);
 
     curPixels = sum(sum(objectPixels));
-    numGreyPixels = numPixels - curPixels;
+    
+    
+    % add grey pixels to make it a square
+    truePlusGreyPixels = zeros(numPixels,3);
+    invPlusGreyPixels = zeros(numPixels,3);
+    truePlusGreyPixels(curPixels:end,:) = 127;
+    invPlusGreyPixels(curPixels:end,:) = 127;
 
     trueR = trueColorStim(:,:,1);
     trueG = trueColorStim(:,:,2);
@@ -200,63 +209,53 @@ for curStim = 1:numStimuli
     curFrame = 1;
     spaceDown = 0;  % Has P pressed the space bar?
     responseKeyReleased = 1;    % Has P released response key?
-    tic
     % Color adjustment
     while ~spaceDown
         if curFrame > 1
             % Set the gamma corrected color values
-            correctedTrueColor = truePixels;% img_gammaConvert(LUT,round(truePixels.*curTrueLumFactor)/lum);
-            correctedFalseColor = invPixels;% img_gammaConvert(LUT,round(invPixels.*curFalseLumFactor)/lum);
-            fprintf('Gamma correction\n');
-            toc
-            truePlusGreyPixels = correctedTrueColor;
-            invPlusGreyPixels = correctedFalseColor;
-
-            % add grey pixels to make it a square
-            truePlusGreyPixels(end:end+numGreyPixels,:) = ptb.grey;
-            invPlusGreyPixels(end:end+numGreyPixels,:) = ptb.grey;
-            fprintf('bla Hardik sucks balls\n');
+            correctedTrueColor = img_gammaConvert(LUT,round(truePixels.*curTrueLumFactor));
+            correctedFalseColor = img_gammaConvert(LUT,round(invPixels.*curFalseLumFactor));
+%             fprintf('Gamma correction\n');
+%             toc
+            truePlusGreyPixels(1:curPixels,:) = correctedTrueColor;
+            invPlusGreyPixels(1:curPixels,:) = correctedFalseColor;
 
             % reshape into a square
-            trueColorPatch = reshape(truePlusGreyPixels,[colorPatchSize colorPatchSize 3]);
-            invColorPatch = reshape(invPlusGreyPixels,[colorPatchSize colorPatchSize 3]);
-            fprintf('Creation of colorpatch\n');
-            toc
+            trueColorPatch(:) = truePlusGreyPixels/255; %reshape(truePlusGreyPixels,[colorPatchSize colorPatchSize 3]);
+            invColorPatch(:) = invPlusGreyPixels/255; %reshape(invPlusGreyPixels,[colorPatchSize colorPatchSize 3]);
+%             fprintf('Creation of colorpatch\n');
+%             toc
 
             % Select   left-eye image buffer for drawing:
             Screen('SelectStereoDrawBuffer', ptb.window, 0);
             if mod(curFrame,2) == 1 % Inversed color
-%                 leftStimTexture = Screen('MakeTexture', ptb.window, invColorPatch);     % create texture for stimulus
-%                 Screen('DrawTexture', ptb.window, leftStimTexture)
-                Screen('FillRect',ptb.window,truePixels(1,:));
+                leftStimTexture = Screen('MakeTexture', ptb.window, invColorPatch);     % create texture for stimulus
+                Screen('DrawTexture', ptb.window, leftStimTexture)
             elseif mod(curFrame,2) == 0 % True color
-%                 leftStimTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
-%                 Screen('DrawTexture', ptb.window, leftStimTexture)
-                Screen('FillRect',ptb.window,invPixels(1,:));
+                leftStimTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
+                Screen('DrawTexture', ptb.window, leftStimTexture)
             end
-            fprintf('Draw to buffer 0\n');
-            toc
+%             fprintf('Draw to buffer 0\n');
+%             toc
 
             % Select   right-eye image buffer for drawing:
             Screen('SelectStereoDrawBuffer', ptb.window, 1);
             if mod(curFrame,2) == 1 % Inversed color
-%                 rightStimTexture = Screen('MakeTexture', ptb.window, invColorPatch);     % create texture for stimulus
-%                 Screen('DrawTexture', ptb.window, rightStimTexture)
-                Screen('FillRect',ptb.window,truePixels(1,:));
+                rightStimTexture = Screen('MakeTexture', ptb.window, invColorPatch);     % create texture for stimulus
+                Screen('DrawTexture', ptb.window, rightStimTexture)
             elseif mod(curFrame,2) == 0 % True color
-%                 rightStimTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
-%                 Screen('DrawTexture', ptb.window, rightStimTexture)
-                Screen('FillRect',ptb.window,invPixels(1,:));
+                rightStimTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
+                Screen('DrawTexture', ptb.window, rightStimTexture)
             end
-            fprintf('Draw to buffer 1\n');
-            toc
+%             fprintf('Draw to buffer 1\n');
+%             toc
 
             Screen('DrawingFinished', ptb.window); % Tell PTB that no further drawing commands will follow before Screen('Flip')
             % close stimulus texture
-%             Screen('Close', rightStimTexture);
-%             Screen('Close', leftStimTexture);
-            fprintf('Closing textures\n');
-            toc
+            Screen('Close', rightStimTexture);
+            Screen('Close', leftStimTexture);
+%             fprintf('Closing textures\n');
+%             toc
         end
     
         % Record and process responses
@@ -320,9 +319,7 @@ for curStim = 1:numStimuli
             responseKeyReleased = 1;
         end % if keyIsDown
         curFrame = curFrame + 1;
-        toc
         vbl = Screen('Flip',ptb.window,vbl+ptb.ifi/2);
-        tic
     end % while 1
 end % for curCol = 1:numel(allProtos)
 disp('--------------------------------------------------------------');
