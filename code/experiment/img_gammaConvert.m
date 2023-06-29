@@ -15,21 +15,11 @@ function img = img_gammaConvert(LUT, img, varargin)
 %
 % see img_gammaLUT.m
 
-if ~isempty(varargin)
-	for i=1:length(varargin)
-		if strcmpi(varargin{i},'-1')
-			invert_flag=varargin{i+1};
-%		elseif strcmpi(varargin{i},'bgcol'),
-%			bgcol = varargin{i+1};
-		end
-    end
-end
-
 
 flag3d=0;
 if ndims(img)>2
 	flag3d=1;
-	[ny,nx,tmp]=size(img);
+	[ny,nx,~]=size(img);
 	img=reshape(img,nx*ny,3); % 2D
 end
 
