@@ -88,6 +88,8 @@ function log = inputSubID(ptb, log)
 
         % call create subjectDir
         log = createSubDir(log);
+        saveDir = fullfile(log.subjectDirectory,[log.sub 'logFile.mat']);
+        save(saveDir,'log');
 
     catch INPUT_ERROR
         rethrow (INPUT_ERROR);

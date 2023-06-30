@@ -19,8 +19,8 @@ catch PTBError
 end
 
 %% design related
-design.stimulusPresentationTime = 2 - ptb.ifi/2;
-design.ITI                      = 1 - ptb.ifi/2;
+design.stimulusPresentationTime = 120 - ptb.ifi/2;
+design.ITI                      = 10 - ptb.ifi/2;
 design.stimSizeInDegrees        = 5;
 design.stimSizeInPixels         = round(ptb.PixPerDegWidth*design.stimSizeInDegrees);
 design.grayBackgroundInDegrees  = 6;
@@ -95,7 +95,7 @@ end
 sub = strcat('sub-', sprintf('%02s', subNr));
 % read in log mat file
 try
-    load(fullfile(dataDir, sub, [sub '_equilumFlicker_log.mat']))
+    load(fullfile(dataDir, sub, [sub 'logFile.mat']))
 catch LOADING_ERROR
     fprintf('No log file was found. Either you did not perform the flicker method or you typed in the wrong subject Number\n')
     loadDefault = input('Do you want to load a standard subject Y/N [Y]? ','s');
@@ -109,7 +109,7 @@ log.runNr = runNr;
 
 % check if there are subject specific stimuli
 trueColorDirectory = fullfile(log.subjectDirectory,'stimuli', 'true_color');
-invertedColorDirectory = fullfile(log.subjectDirectory,'stimuli', 'inverted_color');
+invertedColorDirectory = fullfile(log.subjectDirectory,'stimuli', 'inverted_lab');
 % all the stimuli used
 trueStimuli = dir(fullfile(trueColorDirectory,'*.png'));
 trueStimuliNames = {trueStimuli(:).name};
@@ -196,8 +196,6 @@ try
     
     %% Get design settings
     design = designSettings(log.language,design);
-    % read in the subject specific table with equiluminant color values
-    equilumColorTable = readtable(fullfile(log.subjectDirectory,'equiluminantColorTable.csv'));
     
     %% Inclusion of eye tracker
     if design.useET
