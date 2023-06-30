@@ -65,23 +65,6 @@ stimulusSelection = {
 stimulusSelection = Shuffle(stimulusSelection);
 numStimuli = length(stimulusSelection);
 
-% get maximum number of pixels within mask
-maxPixel = 0;
-for i = 1:numStimuli
-    % read in stimulus mask
-    curMask = imread(fullfile(maskDir,stimulusSelection{i}));
-    curPixels = sum(sum(curMask(:,:,1)>0));
-    if curPixels>maxPixel
-        maxPixel = curPixels;
-    end
-end
-
-% get square root of maximal pixels to create a square with scrambled
-% pixels
-colorPatchSize = ceil(sqrt(maxPixel));
-% get number of pixels in color patch
-numPixels = colorPatchSize*colorPatchSize;
-
 % create subject stimuli directories to store the resulting stimuli in
 correctedTrueStimDir = fullfile(log.subjectDirectory,'stimuli','true_color');
 if (~isfolder(correctedTrueStimDir))
@@ -96,7 +79,8 @@ end
 % stepsize with which the luminance should be increased/decreased
 stepSize = 1/255;
 
-lum = 255;
+% Disable keyboard output to Matlab
+ListenChar(2);
 
 % align fusion
 design = designSettings(log.language);
@@ -142,8 +126,6 @@ Screen('DrawingFinished', ptb.window);
 
 while KbCheck;end
 
-% Disable keyboard output to Matlab
-% ListenChar(2);
 
 % Do initial flip and show instructions    
 vbl = Screen('Flip', ptb.window);
@@ -154,9 +136,6 @@ WaitSecs(0.5);
 % Flush Keyevents in order to avoid that a buttonpress is already
 % interpreted as a reaction to the task
 KbEventFlush()
-
-trueColorPatch = zeros(colorPatchSize,colorPatchSize,3);
-invColorPatch = zeros(colorPatchSize,colorPatchSize,3);
 % Iterate over all colors that need to be adjusted
 for curStim = 1:numStimuli
     trueOutputDir = fullfile(correctedTrueStimDir,stimulusSelection{curStim});
@@ -175,7 +154,15 @@ for curStim = 1:numStimuli
 
     curPixels = sum(sum(objectPixels));
     
-    
+    % get square root of maximal pixels to create a square with scrambled
+    % pixels
+    colorPatchSize = ceil(sqrt(curPixels));
+    % get number of pixels in color patch
+    numPixels = colorPatchSize*colorPatchSize;
+
+    trueColorPatch = zeros(colorPatchSize,colorPatchSize,3);
+    invColorPatch = zeros(colorPatchSize,colorPatchSize,3);
+
     % add grey pixels to make it a square
     truePlusGreyPixels = zeros(numPixels,3);
     invPlusGreyPixels = zeros(numPixels,3);
@@ -213,18 +200,15 @@ for curStim = 1:numStimuli
     while ~spaceDown
         if curFrame > 1
             % Set the gamma corrected color values
-            correctedTrueColor = img_gammaConvert(LUT,round(truePixels.*curTrueLumFactor));
-            correctedFalseColor = img_gammaConvert(LUT,round(invPixels.*curFalseLumFactor));
-%             fprintf('Gamma correction\n');
-%             toc
+            correctedTrueColor = img_gammaConvert(LUT,uint8(truePixels.*curTrueLumFactor));
+            correctedFalseColor = img_gammaConvert(LUT,uint8(invPixels.*curFalseLumFactor));
+
             truePlusGreyPixels(1:curPixels,:) = correctedTrueColor;
             invPlusGreyPixels(1:curPixels,:) = correctedFalseColor;
 
             % reshape into a square
             trueColorPatch(:) = truePlusGreyPixels/255; %reshape(truePlusGreyPixels,[colorPatchSize colorPatchSize 3]);
             invColorPatch(:) = invPlusGreyPixels/255; %reshape(invPlusGreyPixels,[colorPatchSize colorPatchSize 3]);
-%             fprintf('Creation of colorpatch\n');
-%             toc
 
             % Select   left-eye image buffer for drawing:
             Screen('SelectStereoDrawBuffer', ptb.window, 0);
@@ -235,8 +219,6 @@ for curStim = 1:numStimuli
                 leftStimTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
                 Screen('DrawTexture', ptb.window, leftStimTexture)
             end
-%             fprintf('Draw to buffer 0\n');
-%             toc
 
             % Select   right-eye image buffer for drawing:
             Screen('SelectStereoDrawBuffer', ptb.window, 1);
@@ -247,15 +229,11 @@ for curStim = 1:numStimuli
                 rightStimTexture = Screen('MakeTexture', ptb.window, trueColorPatch);         % create texture for stimulus
                 Screen('DrawTexture', ptb.window, rightStimTexture)
             end
-%             fprintf('Draw to buffer 1\n');
-%             toc
 
             Screen('DrawingFinished', ptb.window); % Tell PTB that no further drawing commands will follow before Screen('Flip')
             % close stimulus texture
             Screen('Close', rightStimTexture);
             Screen('Close', leftStimTexture);
-%             fprintf('Closing textures\n');
-%             toc
         end
     
         % Record and process responses
@@ -278,9 +256,9 @@ for curStim = 1:numStimuli
 
                 case confirmButton
                     fprintf('Accepted\n')
-                    trueR(indices) = uint8(round(correctedTrueColor(:,1)*255));
-                    trueG(indices) = uint8(round(correctedTrueColor(:,2)*255));
-                    trueB(indices) = uint8(round(correctedTrueColor(:,3)*255));
+                    trueR(indices) = correctedTrueColor(:,1);
+                    trueG(indices) = correctedTrueColor(:,2);
+                    trueB(indices) = correctedTrueColor(:,3);
 
                     trueColorStim(:,:,1) = trueR;
                     trueColorStim(:,:,2) = trueG;
@@ -288,9 +266,9 @@ for curStim = 1:numStimuli
 
                     imwrite(trueColorStim,trueOutputDir,'png','Alpha', trueAlpha);
 
-                    invR(indices) = uint8(round(correctedFalseColor(:,1)*255));
-                    invG(indices) = uint8(round(correctedFalseColor(:,2)*255));
-                    invB(indices) = uint8(round(correctedFalseColor(:,3)*255));
+                    invR(indices) = correctedFalseColor(:,1);
+                    invG(indices) = correctedFalseColor(:,2);
+                    invB(indices) = correctedFalseColor(:,3);
 
                     invertedColorStim(:,:,1) = invR;
                     invertedColorStim(:,:,2) = invG;
@@ -322,5 +300,8 @@ for curStim = 1:numStimuli
         vbl = Screen('Flip',ptb.window,vbl+ptb.ifi/2);
     end % while 1
 end % for curCol = 1:numel(allProtos)
+
+ListenChar(1);
+Screen('CloseAll');
 disp('--------------------------------------------------------------');
 
