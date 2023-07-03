@@ -181,7 +181,7 @@ log.data.idUp       = [];
 log.data.timeUp     = [];
 
 %% better timing
-ExpStart = 0;         % GetSecs later to set the onset of all the experiment
+log.ExpStart = 0;         % GetSecs later to set the onset of all the experiment
 TrialEnd = 0;         % For better timing
 % design related
 trueColorBufferId       = 0; % 0=left; 1=right - just for initialization 
@@ -259,8 +259,8 @@ try
     KbQueueStart(ptb.Keyboard1); % Experimentors
 
     %% Presentation of stimuli
-    ExpStart = GetSecs();
-    TrialEnd = ExpStart;
+    log.ExpStart = GetSecs();
+    TrialEnd = log.ExpStart;
     
     % Loop over trials
     for trial = 1:numTrials
@@ -324,8 +324,8 @@ try
         TrialEnd    = vblOffset;
 
         %% save timing of stimuli
-        log.data.stimOnset(trial)     = vblOnset-ExpStart;
-        log.data.stimOffset(trial)    = vblOffset-ExpStart;
+        log.data.stimOnset(trial)     = vblOnset;
+        log.data.stimOffset(trial)    = vblOffset;
         log.data.trueColorRotationDegrees(trial) = rotationAngleTrueColor;
         %... Check if Experimentors pressed escape ...%
         % DOES NOT WORK!!!
