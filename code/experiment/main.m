@@ -153,15 +153,6 @@ end
 % rotation is a cell array containing either 'clockwise' or
 % 'counter-clockwise' -> convert into 0 and 1 for easy and fast assignment
 log.data.trueColorRotationDegrees = zeros(numTrials,1);
-% for rotation = 1:length(log.data.trueEye)
-%     if strcmp(log.data.trueColorRotation{rotation}, 'clockwise')
-%         log.data.trueColorRotationDegrees(rotation) = 10;
-%     elseif strcmp(log.data.trueColorRotation{rotation}, 'counter-clockwise')
-%         log.data.trueColorRotationDegrees(rotation) = -10;
-%     else
-%         error('Assignment for rotation direction is neither clockwise nor counter-clockwise')
-%     end
-% end
 
 % preallocate data
 log.data.stimOnset           = zeros(numTrials,1);
@@ -222,31 +213,71 @@ try
     [design.xOffset, design.yOffset] = alignFusion(ptb, design);
 
     % Welcome screen
-    % Select   left-eye image buffer for drawing:
-    Screen('SelectStereoDrawBuffer', ptb.window, 0);
-    DrawFormattedText (ptb.window, design.Introduction, 'center', 'center',ptb.FontColor);
-    % Select right-eye image buffer for drawing:
-    Screen('SelectStereoDrawBuffer', ptb.window, 1);
-    DrawFormattedText (ptb.window, design.Introduction, 'center', 'center',ptb.FontColor);
-    % Tell PTB drawing is finished for this frame:
-    Screen('DrawingFinished', ptb.window);
-    Screen ('Flip', ptb.window);
-    WaitSecs (0.5);
-    KbWait();
-    
+    if log.runNr == 1
+        % Select   left-eye image buffer for drawing:
+        Screen('SelectStereoDrawBuffer', ptb.window, 0);
+        DrawFormattedText (ptb.window, design.Introduction, 'center', 'center',ptb.FontColor);
+        % Select right-eye image buffer for drawing:
+        Screen('SelectStereoDrawBuffer', ptb.window, 1);
+        DrawFormattedText (ptb.window, design.Introduction, 'center', 'center',ptb.FontColor);
+        % Tell PTB drawing is finished for this frame:
+        Screen('DrawingFinished', ptb.window);
+        Screen ('Flip', ptb.window);
+        WaitSecs (0.5);
+        KbWait();
+        
+        % Instructions
+        % Select   left-eye image buffer for drawing:
+        Screen('SelectStereoDrawBuffer', ptb.window, 0);
+        DrawFormattedText (ptb.window, design.Instruction1, 'center', 'center',ptb.FontColor);
+        % Select right-eye image buffer for drawing:
+        Screen('SelectStereoDrawBuffer', ptb.window, 1);
+        DrawFormattedText (ptb.window, design.Instruction1, 'center', 'center',ptb.FontColor);
+        % Tell PTB drawing is finished for this frame:
+        Screen('DrawingFinished', ptb.window);
+        Screen ('Flip', ptb.window);
+        WaitSecs (0.5);
+        KbWait();
+
+        % Instructions
+        % Select   left-eye image buffer for drawing:
+        Screen('SelectStereoDrawBuffer', ptb.window, 0);
+        DrawFormattedText (ptb.window, design.Instruction2, 'center', 'center',ptb.FontColor);
+        % Select right-eye image buffer for drawing:
+        Screen('SelectStereoDrawBuffer', ptb.window, 1);
+        DrawFormattedText (ptb.window, design.Instruction2, 'center', 'center',ptb.FontColor);
+        % Tell PTB drawing is finished for this frame:
+        Screen('DrawingFinished', ptb.window);
+        Screen ('Flip', ptb.window);
+        WaitSecs (0.5);
+        KbWait();
+    end
+
+
     % Instructions
     % Select   left-eye image buffer for drawing:
     Screen('SelectStereoDrawBuffer', ptb.window, 0);
-    DrawFormattedText (ptb.window, design.Instruction1, 'center', 'center',ptb.FontColor);
+    DrawFormattedText (ptb.window, design.Instruction3, 'center', 'center',ptb.FontColor);
     % Select right-eye image buffer for drawing:
     Screen('SelectStereoDrawBuffer', ptb.window, 1);
-    DrawFormattedText (ptb.window, design.Instruction1, 'center', 'center',ptb.FontColor);
+    DrawFormattedText (ptb.window, design.Instruction3, 'center', 'center',ptb.FontColor);
     % Tell PTB drawing is finished for this frame:
     Screen('DrawingFinished', ptb.window);
     Screen ('Flip', ptb.window);
     WaitSecs (0.5);
     KbWait();
-    WaitSecs (0.5);
+
+
+    % Instructions
+    % Select   left-eye image buffer for drawing:
+    Screen('SelectStereoDrawBuffer', ptb.window, 0);
+    DrawFormattedText (ptb.window, design.waitTillStart, 'center', 'center',ptb.FontColor);
+    % Select right-eye image buffer for drawing:
+    Screen('SelectStereoDrawBuffer', ptb.window, 1);
+    DrawFormattedText (ptb.window, design.waitTillStart, 'center', 'center',ptb.FontColor);
+    % Tell PTB drawing is finished for this frame:
+    Screen('DrawingFinished', ptb.window);
+    Screen ('Flip', ptb.window);
 
     %% Stop and remove events in queue
     KbQueueStop(ptb.Keyboard2);
