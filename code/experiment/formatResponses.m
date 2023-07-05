@@ -8,17 +8,18 @@ function [sortedResultsTable, success] = formatResponses(log,ptb)
 
 try
     % get rid of keys that are not response keys for the task
-    log.data.idDown(find(~ismember(log.data.idDown,[ptb.Keys.left ptb.Keys.right])))    = [];
     log.data.timeDown(find(~ismember(log.data.idDown,[ptb.Keys.left ptb.Keys.right])))  = [];
-    log.data.idUp(find(~ismember(log.data.idUp,[ptb.Keys.left ptb.Keys.right])))        = [];
     log.data.timeUp(find(~ismember(log.data.idUp,[ptb.Keys.left ptb.Keys.right])))      = [];
+    log.data.idDown(find(~ismember(log.data.idDown,[ptb.Keys.left ptb.Keys.right])))    = [];
+    log.data.idUp(find(~ismember(log.data.idUp,[ptb.Keys.left ptb.Keys.right])))        = [];
 
         
     % stuff to save onset, duration and percept in
-    percepts = {};
-    stimulus = {};
-    durations = [];
-    onsets = [];
+    percepts    = {};  % which stimulus was perceived
+    stimulus    = {};  % which stimulus was shown
+    true_eye    = {};  % on which eye was the true stimulus shown
+    durations   = []; % how long was a percept
+    onsets      = [];    % when did the percept start
 
     % for each trial
     for trl = 1:length(log.data.stimOnset)
@@ -64,36 +65,46 @@ try
         if ~isempty(trueColorDown) && ~isempty(trueColorUp) % if there is at least one percept in this trial
             trueColorPressed = trueColorUp - log.data.stimOnset(1);
             trueColorDurations = trueColorUp - trueColorDown;
+            durations = [durations; trueColorDurations];
+            onsets = [onsets; trueColorPressed];
+            percepts = [percepts; repmat({'true_color'},length(trueColorDurations),1)];
         else
             warning('The true color was not perceived in trial %u \n', trl);
+            trueColorPressed = [];
+            trueColorDurations = [];
         end
-        durations = [durations; trueColorDurations];
-        onsets = [onsets; trueColorPressed];
-        percepts = [percepts; repmat({'true_color'},length(trueColorDurations),1)];
         if ~isempty(falseColorUp) && ~isempty(falseColorDown) % if there is at least one percept in this trial
             falseColorPressed = falseColorUp-log.data.stimOnset(1);
             falseColorDurations = falseColorUp - falseColorDown;
+            durations = [durations; falseColorDurations];
+            onsets = [onsets; falseColorPressed];
+            percepts = [percepts; repmat({'false_color'},length(falseColorDurations),1)];
         else
             warning('The false color was not perceived in trial %u \n', trl);
+            falseColorPressed = [];
+            falseColorDurations = [];
+
         end
-        durations = [durations; falseColorDurations];
-        onsets = [onsets; falseColorPressed];
-        percepts = [percepts; repmat({'false_color'},length(falseColorDurations),1)];
         % add mixed percepts when nothing was pressed
         if ~isempty(trialIdDown(2:end)) && ~isempty(trialIdUp(1:end-1))
             %
             mixedPressed = trialTimeUp(2:end)-log.data.stimOnset(1);
             mixedDurations = trialTimeDown(2:end)-trialTimeUp(1:end-1);
+            durations = [durations; mixedDurations];
+            onsets = [onsets; mixedPressed];
+            percepts = [percepts; repmat({'mixed'},length(mixedDurations),1)];
+        else
+            warning('There was no mixex percept')
+            mixedPressed = [];
+            mixedDurations = [];
         end
-        durations = [durations; mixedDurations];
-        onsets = [onsets; mixedPressed];
-        percepts = [percepts; repmat({'mixed'},length(mixedDurations),1)];
     
         numSwitches = length(trueColorDurations) + length(falseColorDurations) + length(mixedDurations);
         stimulus = [stimulus; repmat({log.data.stimuli(trl)},numSwitches,1)];
+        true_eye = [true_eye; repmat({log.data.trueEye(trl)},numSwitches,1)];
     end
     success = true;
-    resultsTable = table(stimulus, percepts, onsets, durations);
+    resultsTable = table(stimulus, percepts, onsets, durations, true_eye);
     sortedResultsTable = sortrows(resultsTable, 3);
 
 
