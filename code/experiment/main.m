@@ -19,7 +19,7 @@ catch PTBError
 end
 
 %% design related
-design.stimulusPresentationTime = 120 - ptb.ifi/2;
+design.stimulusPresentationTime = 90 - ptb.ifi/2;
 design.ITI                      = 10 - ptb.ifi/2;
 design.stimSizeInDegrees        = 5;
 design.stimSizeInPixels         = round(ptb.PixPerDegWidth*design.stimSizeInDegrees);
@@ -27,9 +27,9 @@ design.grayBackgroundInDegrees  = 6;
 design.checkerBoardInDegrees    = 10;
 design.checkerBoardXFrequency   = 8;     % checkerboard background frequency along X
 design.checkerBoardXFrequency   = 8;     % checkerboard background frequency along Y
-design.rotationLowerBound       = 8;
-design.rotationUpperBound       = 12;
-design.rotationDiff             = 20;
+design.rotationLowerBound       = 2;
+design.rotationUpperBound       = 4;
+design.rotationDiff             = 6;
 % Use eyetracker?
 design.useET = false;
 
@@ -253,7 +253,6 @@ try
         KbWait();
     end
 
-
     % Instructions
     % Select   left-eye image buffer for drawing:
     Screen('SelectStereoDrawBuffer', ptb.window, 0);
@@ -347,6 +346,9 @@ try
 
         % Tell PTB drawing is finished for this frame:
         Screen('DrawingFinished', ptb.window);
+        % Close stimuli textures to save memory
+        Screen('Close', trueColorTexture);
+        Screen('Close', invertedColorTexture);
         % Present stimuli
         vblOnset  = Screen('Flip', ptb.window, TrialEnd + design.ITI);
 
@@ -371,6 +373,19 @@ try
             end
         end
     end
+    
+    % Run is over
+    % Select   left-eye image buffer for drawing:
+    Screen('SelectStereoDrawBuffer', ptb.window, 0);
+    DrawFormattedText (ptb.window, design.RunIsOver, 'center', 'center',ptb.FontColor);
+    % Select right-eye image buffer for drawing:
+    Screen('SelectStereoDrawBuffer', ptb.window, 1);
+    DrawFormattedText (ptb.window, design.RunIsOver, 'center', 'center',ptb.FontColor);
+    % Tell PTB drawing is finished for this frame:
+    Screen('DrawingFinished', ptb.window);
+    Screen ('Flip', ptb.window);
+    WaitSecs (0.5);
+    KbWait();
 
     %% End of experiment
     Screen('CloseAll')

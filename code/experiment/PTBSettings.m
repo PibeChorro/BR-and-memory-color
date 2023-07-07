@@ -133,7 +133,7 @@ switch ptb.SetUp
         
         ptb.FontSize = Screen('TextSize', ptb.window, 24);
         % Real world variable
-        ptb.DistToMonitor   = 800;  % Distance to monitor in mm (measured by hand)
+        ptb.DistToMonitor   = 680;  % Distance to monitor in mm (measured by hand)
         ptb.widthMonitor    = 600;  % monitor width measured by hand
         ptb.heightMonitor   = 335;  % monitor height measured by hand
     case 'MPI'

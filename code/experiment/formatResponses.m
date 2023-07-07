@@ -98,7 +98,7 @@ try
 
 
 catch READINGERROR
-    fprintf('Something went wrong in trial %u', trl);
+    fprintf('Something went wrong in trial %u\n', trl);
     success = false;
     sortedResultsTable = [];
 end
