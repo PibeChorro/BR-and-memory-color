@@ -26,7 +26,8 @@ confirmButton       = ptb.Keys.accept; % Space
 % read in setup specific gamma correction table
 switch ptb.SetUp
     case 'CIN-personal'
-        LUT = readmatrix('gammaLUT.txt'); % lookup table to make monitor linear
+%         LUT = readmatrix('gammaLUT.txt'); % lookup table to make monitor linear
+        LUT = repmat(0:255,3,1)';
     case 'CIN-experimentroom'
         monCalDir = fullfile('..', 'monitor_calibration', 'EIZO_CIN5th_Brightness50_SpectraScan670_derived.mat');
         load(monCalDir);

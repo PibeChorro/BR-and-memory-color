@@ -105,6 +105,7 @@ catch LOADING_ERROR
         error('Standard subject is not implemented yet')
     end
 end
+log.task = 'objects';
 log.runNr = runNr;
 
 % check if there are subject specific stimuli
@@ -327,7 +328,7 @@ try
         % BACKGROUND
         Screen('FrameRect', ptb.window ,ptb.black ,design.bigFrame, design.penWidth);   % the big frame
         Screen('DrawTexture', ptb.window, backGroundTexture);                           % checkerboard background
-        Screen('FillRect', ptb.window, ptb.grey, ptb.grayRect);                          % gray background on checkerboard
+        Screen('FillRect', ptb.window, ptb.grey, ptb.grayRect);                         % gray background on checkerboard
         % FORGROUND
         trueColorTexture = Screen('MakeTexture', ptb.window, trueColorStimImg);         % create texture for stimulus
         Screen('DrawTexture', ptb.window, trueColorTexture, [], ...

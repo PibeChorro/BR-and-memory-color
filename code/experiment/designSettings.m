@@ -4,7 +4,6 @@ if nargin < 2
     design = struct;
     design.stimulusPresentationTime = 120;
     design.ITI = 10;
-    
 end
 
 if strcmp (language, 'german')
