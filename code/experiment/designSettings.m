@@ -2,6 +2,8 @@ function [design] = designSettings(language,design)
 
 if nargin < 2
     design = struct;
+    design.stimulusPresentationTime = 120;
+    design.ITI = 10;
 end
 
 if strcmp (language, 'german')
@@ -30,7 +32,7 @@ if strcmp (language, 'german')
         'Erinnerung:\n\n' ...
         'LINKS (4) für Objetk in typischer Farbe\n' ...
         'RECHTS (6) für Objekt in untypischer Farbe\n\n' ...
-        num2str(round(design.stimulusPresentationTime)) 's pro Objekt, ' num2str(round(design.ITI)) 's Pause zwischen den Objekten.\n\n'
+        num2str(round(design.stimulusPresentationTime)) 's pro Objekt, ' num2str(round(design.ITI)) 's Pause zwischen den Objekten.\n\n' ...
         'Drücke einen beliebigen Knopf um fort zu fahren'
         ];
     design.waitTillStart = [
