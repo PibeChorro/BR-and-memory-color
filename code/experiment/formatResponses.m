@@ -35,12 +35,16 @@ try
         trialIdDown     = log.data.idDown(trialKeyTimeDown);
         trialIdUp       = log.data.idUp(trialKeyTimeUp);
 
+        % check if button presses is empty
+        if isempty(trialTimeUp) || isempty(trialTimeDown)
+            continue;
+        end
         % check whether the first key release is prior to the first key
         % press
         if trialTimeUp(1)<trialTimeDown(1)
             trialTimeUp(1) = [];
         end
-
+        
         % Remove the last  percept, since we cannot know how long it would 
         % have lasted
         % If the number of key presses is larger than the key releases, we
@@ -51,6 +55,10 @@ try
             trialIdDown(end)    = [];
         elseif length(trialTimeDown)<length(trialTimeUp)
             error('You have more key releases than key presses')
+        end
+        %check again
+        if isempty(trialTimeUp) || isempty(trialTimeDown)
+            continue;
         end
 
         %% separate into true color and false color key presses
@@ -89,7 +97,7 @@ try
         if ~isempty(trialIdDown(2:end)) && ~isempty(trialIdUp(1:end-1))
             %
             mixedPressed = trialTimeUp(2:end)-log.data.stimOnset(1);
-            mixedDurations = trialTimeDown(2:end)-trialTimeUp(1:end-1);
+            mixedDurations = abs(trialTimeDown(2:end)-trialTimeUp(1:end-1));
             durations = [durations; mixedDurations];
             onsets = [onsets; mixedPressed];
             percepts = [percepts; repmat({'mixed'},length(mixedDurations),1)];
