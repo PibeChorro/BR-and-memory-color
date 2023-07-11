@@ -27,9 +27,9 @@ design.grayBackgroundInDegrees  = 6;
 design.checkerBoardInDegrees    = 10;
 design.checkerBoardXFrequency   = 8;     % checkerboard background frequency along X
 design.checkerBoardXFrequency   = 8;     % checkerboard background frequency along Y
-design.rotationLowerBound       = 2;
-design.rotationUpperBound       = 4;
-design.rotationDiff             = 6;
+design.rotationLowerBound       = 4;
+design.rotationUpperBound       = 6;
+design.rotationDiff             = 10;
 % Use eyetracker?
 design.useET = false;
 
@@ -123,10 +123,6 @@ if isempty(trueStimuliNames) || isempty(invertedStimuliNames)
     error('No stimuli found in subject specific stimuli folder')
 end
 
-% get randomized stimulus conditions for subject
-if log.runNr == 1
-    createCounterbalancedPseudorandomizedConditions(log);
-end
 % read in csv table with conditions for run
 try
     conditionsTableDir = fullfile(log.subjectDirectory,[log.sub sprintf('_run-%02d',log.runNr) '.csv']);
@@ -134,13 +130,14 @@ try
 catch READINGERROR
     error('could not read conditions table')
 end
+
 log.data.trueEye = conditionsTable.sides;
 log.data.stimuli = conditionsTable.stimuli;
 % get number of trials from the length of stimuli 
-numTrials = length(log.data.trueEye);
+design.numTrials = length(log.data.trueEye);
 % trueEye is a cell array containing either 'right' or 'left' -> convert
 % into 0 and 1 for easy and fast assignment
-log.data.trueEyeBinary = zeros(numTrials,1);
+log.data.trueEyeBinary = zeros(design.numTrials,1);
 for side = 1:length(log.data.trueEye)
     if strcmp(log.data.trueEye{side}, 'left')
         log.data.trueEyeBinary(side) = 0;
@@ -153,17 +150,11 @@ end
 
 % rotation is a cell array containing either 'clockwise' or
 % 'counter-clockwise' -> convert into 0 and 1 for easy and fast assignment
-log.data.trueColorRotationDegrees = zeros(numTrials,1);
+log.data.trueColorRotationDegrees = zeros(design.numTrials,1);
 
 % preallocate data
-log.data.stimOnset           = zeros(numTrials,1);
-log.data.stimOffset          = zeros(numTrials,1);
-log.data.initPercept         = repmat({''},numTrials,1);
-log.data.durationInit        = zeros(numTrials,1);
-log.data.durationTrue        = zeros(numTrials,1);
-log.data.durationInvert      = zeros(numTrials,1);
-log.data.durationMixed       = zeros(numTrials,1);
-log.data.numSwitches         = zeros(numTrials,1);
+log.data.stimOnset           = zeros(design.numTrials,1);
+log.data.stimOffset          = zeros(design.numTrials,1);
 
 % the exact times of which button was pressed at which point. Cannot be
 % preallocated because we do not know how many switches may occur
@@ -173,7 +164,7 @@ log.data.idUp       = [];
 log.data.timeUp     = [];
 
 %% better timing
-log.ExpStart = 0;         % GetSecs later to set the onset of all the experiment
+log.ExpStart = 0;     % GetSecs later to set the onset of all the experiment
 TrialEnd = 0;         % For better timing
 % design related
 trueColorBufferId       = 0; % 0=left; 1=right - just for initialization 
@@ -294,7 +285,7 @@ try
     TrialEnd = log.ExpStart;
     
     % Loop over trials
-    for trial = 1:numTrials
+    for trial = 1:design.numTrials
         %% Read in and process images
         trueColorStimPath       = fullfile(trueColorDirectory, log.data.stimuli{trial});
         invertedColorStimPath   = fullfile(invertedColorDirectory, log.data.stimuli{trial});
@@ -402,6 +393,6 @@ catch MY_ERROR
     ListenChar(1); % enable input to matlab windows
     % Experiment ended with an error
     log.end = 'Finished with errors';
-    log = savedata(log,ptb,design);
+    savedata(log,ptb,design);
     rethrow(MY_ERROR);
 end

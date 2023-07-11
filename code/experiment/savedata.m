@@ -17,12 +17,9 @@ function log = savedata(log,ptb,design)
             log.data.timeUp = [log.data.timeUp; evt.Time];
         end
     end
-    
-    if strcmp(log.runNr,'gratings')
-        fileName = [log.sub 'run-gratings'];
-    else
-        fileName = [log.sub '_' log.task sprintf('_run-%02d',log.runNr)];
-    end
+
+    % filename dependent on task [objects|gratings] and run [1-6]
+    fileName = [log.sub '_task-' log.task sprintf('_run-%02d',log.runNr)];
 
     if strcmp(log.end,'Finished with errors')
         save(fullfile(log.subjectDirectory, [fileName '_ptb_error']),'ptb');

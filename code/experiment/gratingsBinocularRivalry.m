@@ -8,26 +8,59 @@ catch PTBError
 end
 
 %% design related
-design.stimulusPresentationTime = 12 - ptb.ifi/2;
+design.stimulusPresentationTime = 90 - ptb.ifi/2;
 design.ITI                      = 5 - ptb.ifi/2;
-design.stimSizeInDegrees        = 5;
+design.stimSizeInDegrees        = 1.8;
 design.stimSizeInPixels         = round(ptb.PixPerDegWidth*design.stimSizeInDegrees);
-design.grayBackgroundInDegrees  = 6;
+design.grayBackgroundInDegrees  = 3;
 design.checkerBoardInDegrees    = 10;
-design.checkerBoardXFrequency   = 8;     % checkerboard background frequency along X
-design.checkerBoardXFrequency   = 8;     % checkerboard background frequency along Y
-design.angle                    = 45; % angle
+design.checkerBoardXFrequency   = 8;    % checkerboard background frequency along X
+design.checkerBoardXFrequency   = 8;    % checkerboard background frequency along Y
+design.deltaPhase               = 5;    % rate by which the phase of gratings change every flip
+design.angle                    = 45;   % angle
 design.frequency                = 0.03; % spatial frequency
 design.contrast                 = 0.5; % contrast 
 design.sigma                    = -1.0; % sigma < 0 is a sinusoid.
 
+% Placement of explain stimuli
+trueExampleRect = [
+    ptb.screenXpixels/4 - design.stimSizeInPixels ...
+    ptb.yCenter - design.stimSizeInPixels ...
+    ptb.screenXpixels/4 + design.stimSizeInPixels ...
+    ptb.yCenter + design.stimSizeInPixels
+    ];
+
+invExampleRect = [
+    ptb.screenXpixels*2/3 - design.stimSizeInPixels ...
+    ptb.yCenter - design.stimSizeInPixels ...
+    ptb.screenXpixels*2/3 + design.stimSizeInPixels ...
+    ptb.yCenter + design.stimSizeInPixels
+    ];
+
 % Use eyetracker?
 design.useET = false;
+
+%% Backgrounds
+% gray small background
+design.grayBackgroundInPixelsX     = round(ptb.PixPerDegWidth* 2 *design.grayBackgroundInDegrees); 
+design.grayBackgroundInPixelsY     = round(ptb.PixPerDegHeight*design.grayBackgroundInDegrees);
+ptb.grayRect = [...
+    ptb.screenXpixels/2-design.grayBackgroundInPixelsX/2 ... 
+    ptb.screenYpixels/2-design.grayBackgroundInPixelsY/2 ...
+    ptb.screenXpixels/2+design.grayBackgroundInPixelsX/2 ...
+    ptb.screenYpixels/2+design.grayBackgroundInPixelsY/2];
+% checkerboard background
+% IMPORTANT! because the screen is in Stereomode and therefore devided the
+% calculation for pixel width is wrong. Multiplying by 2 resovles that
+design.checkerBoardInPixelsX       = int16(round(ptb.PixPerDegWidth* 2 *design.checkerBoardInDegrees));
+design.checkerBoardInPixelsY       = int16(round(ptb.PixPerDegHeight*design.checkerBoardInDegrees));
+checkerBoardBackground = createCheckerboard(design.checkerBoardInPixelsX, design.checkerBoardInPixelsY,...
+    design.checkerBoardXFrequency, design.checkerBoardXFrequency);
+backGroundTexture = Screen('MakeTexture', ptb.window, checkerBoardBackground);
 
 %% experimenter input
 dataDir = fullfile('..', '..', 'rawdata');
 subNr = input('Enter subject Nr: ','s');
-correctRunInput = false;
 
 sub = strcat('sub-', sprintf('%02s', subNr));
 % read in log mat file
@@ -56,6 +89,11 @@ end
 log.task = 'gratings';
 log.runNr = runNr;
 
+% get randomized stimulus conditions for subject
+if log.runNr == 1
+    createCounterbalancedPseudorandomizedConditions(log);
+end
+
 colorDirectory = fullfile(log.subjectDirectory,'stimuli','typical_colors.csv');
 % read in table with typical colors
 try
@@ -74,6 +112,22 @@ catch READINGERROR
 end
 log.data.trueEye = conditionsTable.sides;
 log.data.stimuli = conditionsTable.stimuli;
+
+% get number of trials from the length of stimuli 
+design.numTrials = length(log.data.trueEye);
+
+% trueEye is a cell array containing either 'right' or 'left' -> convert
+% into 0 and 1 for easy and fast assignment
+log.data.trueEyeBinary = zeros(design.numTrials,1);
+for side = 1:length(log.data.trueEye)
+    if strcmp(log.data.trueEye{side}, 'left')
+        log.data.trueEyeBinary(side) = 0;
+    elseif strcmp(log.data.trueEye{side}, 'right')
+        log.data.trueEyeBinary(side) = 1;
+    else
+        error('Assignment for true color side is neither left nor right')
+    end
+end
 
 %% data
 % the exact times of which button was pressed at which point. Cannot be
@@ -200,10 +254,10 @@ try
     TrialEnd = log.ExpStart;
 
     % Loop over trials
-    for trial = 1:2%:numTrials
+    for trial = 1:design.numTrials
         % show gratings
         phase = 0; % phase
-        idx = find(typicalColorTable.stimuli == conditionsTable.stimuli(trial));
+        idx = find(contains(typicalColorTable.stimuli, conditionsTable.stimuli{trial}));
         trueR = typicalColorTable.true_r(idx);
         trueG = typicalColorTable.true_g(idx);
         trueB = typicalColorTable.true_b(idx);
@@ -215,20 +269,22 @@ try
         trueColor = [trueR trueG trueB 1]/255;
         invertedColor = [invR invG invB 1]/255;
         
-        black = [0 0 0 1];
-
-        trueColorBufferId = 0;
-        invertedColorBufferId = 1;
+        design.gratingColor2 = [0.25 0.25 0.25 1];
+        
+        % Determine on which eye the true color and the inverted color
+        % stimulus is presented 
+        trueColorBufferId       = sum(log.data.trueEyeBinary(trial));
+        invertedColorBufferId   = sum(~log.data.trueEyeBinary(trial));
 
         %% draw and show stimuli
         % Build a procedural texture, we also keep the shader as we will show how to
         % modify it (though not as efficient as using parameters in drawtexture)
         trueGrating = CreateProceduralColorGrating(ptb.window, design.stimSizeInPixels, ...
-            design.stimSizeInPixels,trueColor, black, design.stimSizeInPixels/2);
+            design.stimSizeInPixels,trueColor, design.gratingColor2, design.stimSizeInPixels/2);
 
         invGrating = CreateProceduralColorGrating(ptb.window, design.stimSizeInPixels, ...
-            design.stimSizeInPixels,invertedColor, black, design.stimSizeInPixels/2);
-             
+            design.stimSizeInPixels,invertedColor, design.gratingColor2, design.stimSizeInPixels/2);
+        
         % tell subjects which button they should press, depending on their
         % percept
         
@@ -275,9 +331,10 @@ try
         KbWait();
         log.data.stimOnset(trial) = GetSecs();
         while vbl < log.data.stimOnset(trial) + design.stimulusPresentationTime
-            % Select image buffer for true color image:
             Screen('SelectStereoDrawBuffer', ptb.window, trueColorBufferId);
             % Draw the shader texture with parameters
+            Screen('DrawTexture', ptb.window, backGroundTexture);                           % checkerboard background
+            Screen('FillRect', ptb.window, ptb.grey, ptb.grayRect);                         % gray background on checkerboard
             Screen('DrawTexture', ptb.window, trueGrating, [], [], ...
                 design.angle, [], [], ptb.BackgroundColor, [], [], ...
                 [phase, design.frequency, design.contrast, design.sigma]);
@@ -285,6 +342,8 @@ try
             % Select image buffer for inverted color image:
             Screen('SelectStereoDrawBuffer', ptb.window, invertedColorBufferId);
             % Draw the shader texture with parameters
+            Screen('DrawTexture', ptb.window, backGroundTexture);                           % checkerboard background
+            Screen('FillRect', ptb.window, ptb.grey, ptb.grayRect);                         % gray background on checkerboard
             Screen('DrawTexture', ptb.window, invGrating, [], [], ... 
                 -design.angle, [], [], ptb.BackgroundColor, [], [], ...
                 [phase, design.frequency, design.contrast, design.sigma]);
@@ -293,7 +352,7 @@ try
             vbl = Screen('Flip', ptb.window, vbl + 0.5 * ptb.ifi);
 
             % update phase
-            phase = phase - 15;
+            phase = phase - design.deltaPhase;
         end
 
         % close textures to save memory
@@ -332,6 +391,9 @@ try
 catch MY_ERROR
     Screen('CloseAll');
     ListenChar(1); % enable input to matlab windows
+    % Experiment ended with an error
+    log.end = 'Finished with errors';
+    savedata(log,ptb,design);
     % Experiment ended with an error
     rethrow(MY_ERROR);
 end
